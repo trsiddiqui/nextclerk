@@ -1,5 +1,7 @@
 ```
-yarn
-docker-compose up
-yarn dev
+1. yarn
+2. docker-compose up
+3. yarn migrate
+4. yarn seed
+5. yarn dev
 ```
