@@ -11,7 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
 import knex from '@databases';
 import { Routes } from '@interfaces/routes.interface';
-import errorMiddleware from '@middlewares/error.middleware';
+import errorMiddleware from '@/routes/middlewares/error';
 import { logger, stream } from '@utils/logger';
 
 class App {
@@ -61,7 +61,7 @@ class App {
 
   private initializeRoutes(routes: Routes[]) {
     routes.forEach(route => {
-      this.app.use('/', route.router);
+      this.app.use(`/${route.path ?? ''}`, route.router);
     });
   }
 
