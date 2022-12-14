@@ -1,0 +1,215 @@
+openapi: 3.0.2
+info:
+  title: "VCS: Operational Menu API for Publishing"
+  description: Service for Triggering Menu Publish from Frontend
+  version: 1.0.0
+  contact:
+    email: info@touchbistro.com
+servers:
+  - url: https://venue.api.touchbistro.io/config/frontend
+    description: Frontend Server
+tags:
+  - name: Operational Menu
+paths:
+  "/users":
+    get:
+      summary: Get all User items
+      description: Get a list of Users
+      operationId: User.all
+      tags:
+        - entity
+      responses:
+        "200":
+          description: Happy path
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Users"
+        "404":
+          "$ref": "#/components/responses/404"
+        "403":
+          "$ref": "#/components/responses/403"
+        "409":
+          "$ref": "#/components/responses/409"
+    post:
+      summary: create a User item
+      description: Creates a new Users
+      operationId: User.post
+      tags:
+        - entity
+      requestBody:
+        description: The new User to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/User"
+      responses:
+        "201":
+          description: The User was created.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "400":
+          "$ref": "#/components/responses/400"
+        "403":
+          "$ref": "#/components/responses/403"
+        "409":
+          "$ref": "#/components/responses/409"
+        "404":
+          "$ref": "#/components/responses/404"
+  "/users/{uuid}":
+    get:
+      summary: Get a User item by uuid
+      description: Get a Users
+      operationId: User.ByUUID
+      tags:
+        - entity
+      responses:
+        "200":
+          description: successful response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "404":
+          "$ref": "#/components/responses/404"
+        "403":
+          "$ref": "#/components/responses/403"
+        "409":
+          "$ref": "#/components/responses/409"
+    put:
+      summary: update a User item
+      description: Update an existing User
+      operationId: User.put
+      tags:
+        - entity
+      requestBody:
+        description: the new values of the User
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/User"
+      responses:
+        "200":
+          description: successful response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "400":
+          "$ref": "#/components/responses/400"
+        "403":
+          "$ref": "#/components/responses/403"
+        "409":
+          "$ref": "#/components/responses/409"
+        "404":
+          "$ref": "#/components/responses/404"
+
+    delete:
+      summary: Delete a User item by uuid
+      description: Deletes a Users
+      operationId: User.delete
+      tags:
+        - entity
+      responses:
+        "204":
+          description: successful response
+        "403":
+          "$ref": "#/components/responses/403"
+        "409":
+          "$ref": "#/components/responses/409"
+        "404":
+          "$ref": "#/components/responses/404"
+components:
+  securitySchemes:
+    InfrastructureAuthToken:
+      type: http
+      x-sensitive: false
+      scheme: bearer
+      bearerFormat: JWT
+      description: Infrastructure Auth Token provided by Infrastructure Auth Service
+        supplied as a Bearer Token.
+  schemas:
+    ErrorObject:
+      type: object
+      x-sensitive: false
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          x-sensitive: false
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              x-sensitive: false
+              description: System-friendly error code for this Error.
+            message:
+              type: string
+              x-sensitive: false
+              description: |-
+                Human-friendly error message for this Error.
+                This error message is not intended for end-user presentation.
+      additionalProperties: false
+    User:
+      type: object
+      x-sensitive: false
+      required:
+        - password
+        - email
+      properties:
+        email:
+          type: string
+          x-sensitive: false
+          description: email
+        password:
+          type: string
+          x-sensitive: false
+          description: password
+      additionalProperties: false
+    Users:
+      type: array
+      x-sensitive: false
+      items:
+        "$ref": "#/components/schemas/User"
+  responses:
+    "400":
+      description: Request provided was not properly formed or did not have all the
+        required information. See the response body error property for more
+        details
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorObject"
+    "401":
+      description: Request did not have a valid HTTP Authorization Bearer Access Token.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorObject"
+    "403":
+      description: Request could not be completed because the user doesn't have
+        sufficient permission to perform request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorObject"
+    "404":
+      description: Request could not be completed because the specified resource could
+        not be found. See the response body error property for more details
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorObject"
+    "409":
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorObject"

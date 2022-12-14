@@ -1,64 +1,64 @@
-import { NextFunction, Request, Response } from 'express';
-import { User } from '@/types/user';
-import userService from '@services/users.service';
+import { NextFunction, Request, Response } from 'express'
+import { User } from '@/types/user'
+import userService from '@services/users.service'
 
 class UsersHandler {
-  public userService = new userService();
+  public userService = new userService()
 
   public getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const findAllUsersData: User[] = await this.userService.findAllUser();
+      const findAllUsersData: User[] = await this.userService.findAllUser()
 
-      res.status(200).json({ data: findAllUsersData, message: 'findAll' });
+      res.status(200).json({ data: findAllUsersData, message: 'findAll' })
     } catch (error) {
-      next(error);
+      next(error)
     }
-  };
+  }
 
   public getUserById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = Number(req.params.id);
-      const findOneUserData: User = await this.userService.findUserById(userId);
+      const userId = Number(req.params.id)
+      const findOneUserData: User = await this.userService.findUserById(userId)
 
-      res.status(200).json({ data: findOneUserData, message: 'findOne' });
+      res.status(200).json({ data: findOneUserData, message: 'findOne' })
     } catch (error) {
-      next(error);
+      next(error)
     }
-  };
+  }
 
   public createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: User = req.body;
-      const createUserData: User = await this.userService.createUser(userData);
+      const userData: User = req.body
+      const createUserData: User = await this.userService.createUser(userData)
 
-      res.status(201).json({ data: createUserData, message: 'created' });
+      res.status(201).json({ data: createUserData, message: 'created' })
     } catch (error) {
-      next(error);
+      next(error)
     }
-  };
+  }
 
   public updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = Number(req.params.id);
-      const userData: User = req.body;
-      const updateUserData: User = await this.userService.updateUser(userId, userData);
+      const userId = Number(req.params.id)
+      const userData: User = req.body
+      const updateUserData: User = await this.userService.updateUser(userId, userData)
 
-      res.status(200).json({ data: updateUserData, message: 'updated' });
+      res.status(200).json({ data: updateUserData, message: 'updated' })
     } catch (error) {
-      next(error);
+      next(error)
     }
-  };
+  }
 
   public deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = Number(req.params.id);
-      const deleteUserData: User = await this.userService.deleteUser(userId);
+      const userId = Number(req.params.id)
+      const deleteUserData: User = await this.userService.deleteUser(userId)
 
-      res.status(200).json({ data: deleteUserData, message: 'deleted' });
+      res.status(200).json({ data: deleteUserData, message: 'deleted' })
     } catch (error) {
-      next(error);
+      next(error)
     }
-  };
+  }
 }
 
-export default UsersHandler;
+export default UsersHandler

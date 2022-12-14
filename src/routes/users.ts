@@ -6,15 +6,16 @@ import { openApiValidatorMiddlewares } from './middlewares/validation'
 class UsersRoute implements Routes {
   public router = Router()
   usersController = new UsersHandler()
-  public path = 'users-api'
 
   constructor() {
-    // this.router.use(
-    //   ...openApiValidatorMiddlewares({
-    //     apiSpec: 'swagger.yaml',
-    //     validateResponses: true, // this should take care of the responses in tests
-    //   }),
-    // );
+    this.router.use(
+      ...openApiValidatorMiddlewares({
+        apiSpec: 'openapi.yaml',
+        validateResponses: true, // this should take care of the responses in tests
+        validateApiSpec: true,
+        validateRequests: true,
+      })
+    )
     this.router.get(`/users`, this.usersController.getUsers)
     this.router.get(`/users/:id`, this.usersController.getUserById)
     this.router.post(`/users`, this.usersController.createUser)
