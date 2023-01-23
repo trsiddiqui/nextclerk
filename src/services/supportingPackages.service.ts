@@ -5,6 +5,7 @@ import { HttpException } from '@exceptions/HttpException'
 import { isEmpty } from '@utils/util'
 import axios from 'axios'
 import querystring from 'querystring'
+import { TENANT_ID, CLIENT_ID, CLIENT_CREDENTIALS, DRIVE_ID } from '../config'
 
 class SupportingPackageService {
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -12,11 +13,11 @@ class SupportingPackageService {
     try {
       const accessToken = (
         await axios.post(
-          'https://login.microsoftonline.com/2246f3d0-0ab6-418c-8216-db7e3afe1606/oauth2/v2.0/token',
+          `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
           querystring.stringify({
             grant_type: 'client_credentials',
-            client_secret: '1Ch8Q~z-bURNe8V9Hl5J6M3WEMfNLruj3ykOaaft',
-            client_id: '7a399b91-aab0-405f-b613-467a799f5cf2',
+            client_secret: CLIENT_CREDENTIALS,
+            client_id: CLIENT_ID,
             scope: 'https://graph.microsoft.com/.default',
           }),
           {
@@ -32,7 +33,7 @@ class SupportingPackageService {
       // Check if customer folder exists
       const customers = (
         await axios.get(
-          'https://graph.microsoft.com/v1.0/drives/b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol/root:/Customers:/children',
+          `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -48,7 +49,7 @@ class SupportingPackageService {
         customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
       } else {
         const customerFolderCreated = await axios.post(
-          'https://graph.microsoft.com/v1.0/drives/b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol/root:/Customers:/children',
+          `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
           {
             name: customerXRefID,
             folder: {},
@@ -69,11 +70,11 @@ class SupportingPackageService {
       // Copy line item template file for new customer
       // https://learn.microsoft.com/en-us/graph/api/driveitem-copy?view=graph-rest-1.0&tabs=http https://learn.microsoft.com/en-us/graph/api/driveitem-copy?view=graph-rest-1.0&tabs=http
       const lineItemFileCreated = await axios.post(
-        'https://graph.microsoft.com/v1.0/Drives/b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol/Items/1E15F199-0BE0-4AAC-B94A-D007364CB3E2/copy?@microsoft.graph.conflictBehavior=replace',
+        `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/1E15F199-0BE0-4AAC-B94A-D007364CB3E2/copy?@microsoft.graph.conflictBehavior=replace`,
         {
           name: 'LineItems.xlsx',
           parentReference: {
-            driveId: 'b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol',
+            driveId: DRIVE_ID,
             id: customerFolderId,
           },
           '@microsoft.graph.conflictBehavior': 'replace',
@@ -89,7 +90,7 @@ class SupportingPackageService {
       // Get file created info
       const files = (
         await axios.get(
-          `https://graph.microsoft.com/v1.0/drives/b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol/root:/Customers/${customerXRefID}:/children`,
+          `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers/${customerXRefID}:/children`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -105,7 +106,7 @@ class SupportingPackageService {
       // https://learn.microsoft.com/en-us/graph/api/listitem-createlink?view=graph-rest-beta&tabs=http
       const sharingLinkResp = (
         await axios.post(
-          `https://graph.microsoft.com/v1.0/Drives/b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol/Items/${file.id}/createLink`,
+          `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${file.id}/createLink`,
           {
             type: 'edit',
             scope: 'anonymous',

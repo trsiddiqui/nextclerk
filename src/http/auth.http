@@ -1,5 +1,5 @@
 # baseURL
-@baseURL = http://localhost:9000
+@baseURL = http://localhost:3000
 
 ###
 # User Signup
