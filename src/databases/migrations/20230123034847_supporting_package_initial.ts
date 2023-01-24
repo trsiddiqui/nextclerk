@@ -136,5 +136,7 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTable('supporting_packages')
   await knex.schema.dropTable('supporting_packages_participants')
   await knex.schema.dropTable('supporting_packages_attachments')
+  await knex.schema.dropTable('communications_users')
+  await knex.schema.dropTable('supporting_packages_communications')
 }
 
