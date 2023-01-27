@@ -1,10 +1,9 @@
-import { Knex } from "knex";
-
+import { Knex } from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('entities', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigIncrements('uuid').notNullable()
+    table.string('uuid').notNullable()
     table.string('name').notNullable()
     table.boolean('isPrimary').defaultTo(false).notNullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
@@ -17,7 +16,7 @@ export async function up(knex: Knex): Promise<void> {
   })
   await knex.schema.createTable('labels', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigIncrements('uuid').notNullable()
+    table.string('uuid').notNullable()
     table.string('label').notNullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
@@ -29,7 +28,7 @@ export async function up(knex: Knex): Promise<void> {
   })
   await knex.schema.createTable('categories', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigIncrements('uuid').notNullable()
+    table.string('uuid').notNullable()
     table.string('name').notNullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
@@ -41,9 +40,10 @@ export async function up(knex: Knex): Promise<void> {
   })
   await knex.schema.createTable('files', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigIncrements('uuid').notNullable().primary()
+    table.string('uuid').notNullable()
     table.text('name').notNullable()
     table.text('location').notNullable()
+    table.text('remoteReferenceUuid').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt').notNullable().defaultTo(knex.fn.now())
@@ -55,7 +55,7 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('supporting_packages', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigIncrements('uuid').notNullable().primary()
+    table.string('uuid').notNullable()
     table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
     table.bigInteger('categoryID').notNullable().references('id').inTable('public.categories')
     table.string('title').nullable()
@@ -63,6 +63,7 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('isConfidential').defaultTo(false).notNullable()
     table.string('journalNumber').nullable()
     table.timestamp('date').notNullable()
+    table.boolean('isDraft').notNullable()
     table.bigInteger('approverID').notNullable().references('id').inTable('public.users')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
@@ -70,15 +71,47 @@ export async function up(knex: Knex): Promise<void> {
     table.string('updatedBy').notNullable()
     table.unique(['uuid'])
   })
+  await knex.schema.createTable('supporting_packages_attachments', (table) => {
+    table.bigIncrements('id').notNullable().primary()
+    table
+      .bigInteger('supportingPackageID')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages')
+    table.bigInteger('fileID').notNullable().references('id').inTable('public.files')
+    table.boolean('isMaster').defaultTo(false).notNullable()
+    table.string('name')
+    table.string('mimeType')
+    table.integer('size')
+    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
+    table.string('createdBy').notNullable()
+    table.string('updatedBy').notNullable()
+    table.string('deletedBy').notNullable()
+  })
 
   await knex.schema.createTable('supporting_packages_communications', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigIncrements('uuid').notNullable().primary()
-    table.bigInteger('supportingPackageID').notNullable().references('id').inTable('public.supporting_packages')
+    table.string('uuid').notNullable()
+    table
+      .bigInteger('supportingPackageID')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages')
     table.string('cellLink')
+    table.boolean('isCellLinkValid')
     table.text('text').notNullable()
-    table.string('attachmentLink')
-    table.integer('order')
+    table
+      .bigInteger('attachmentId')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages_attachments')
+    table
+      .bigInteger('replyToCommunicationId')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages_communications')
     table.boolean('isChangeRequest').defaultTo(false)
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
@@ -91,8 +124,12 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('communications_users', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigInteger('communicationID').notNullable().references('id').inTable('public.supporting_packages_communications')
-    table.bigInteger('userID').notNullable().references('id').inTable('public.files')
+    table
+      .bigInteger('communicationID')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages_communications')
+    table.bigInteger('userID').notNullable().references('id').inTable('public.users')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
@@ -103,8 +140,12 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('supporting_packages_participants', (table) => {
     table.bigIncrements('id').notNullable().primary()
-    table.bigInteger('supportingPackageID').notNullable().references('id').inTable('public.supporting_packages')
-    table.bigInteger('userID').notNullable().references('id').inTable('public.files')
+    table
+      .bigInteger('supportingPackageID')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages')
+    table.bigInteger('userID').notNullable().references('id').inTable('public.users')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
@@ -112,21 +153,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('updatedBy').notNullable()
     table.string('deletedBy').notNullable()
   })
-  await knex.schema.createTable('supporting_packages_attachments', (table) => {
-    table.bigIncrements('id').notNullable().primary()
-    table.bigInteger('supportingPackageID').notNullable().references('id').inTable('public.supporting_packages')
-    table.bigInteger('fileID').notNullable().references('id').inTable('public.users')
-    table.boolean('isMaster').defaultTo(false).notNullable()
-    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
-    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
-    table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
-    table.string('createdBy').notNullable()
-    table.string('updatedBy').notNullable()
-    table.string('deletedBy').notNullable()
-  })
-
 }
-
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTable('entities')
@@ -139,4 +166,3 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTable('communications_users')
   await knex.schema.dropTable('supporting_packages_communications')
 }
-
