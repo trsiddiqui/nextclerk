@@ -1,13 +1,42 @@
 import { hash } from 'bcrypt'
-import { SupportingPackage } from '@/types/supportingPackage'
-import { HttpException } from '@exceptions/HttpException'
-// import { SupportingPackages } from '@models/users.model'
-import { isEmpty } from '@utils/util'
+import { v4 } from 'uuid'
+import { SupportingPackage, SupportingPackageRequest } from '../types/supportingPackage'
+import { HttpException } from '../exceptions/HttpException'
+import { SupportingPackagesManager } from '../models'
+import CategoryService from '../services/categories.service'
+import LabelService from '../services/labels.service'
+import { isEmpty } from '../utils/util'
 import axios from 'axios'
 import querystring from 'querystring'
 import { TENANT_ID, CLIENT_ID, CLIENT_CREDENTIALS, DRIVE_ID } from '../config'
+import knex, { Knex } from 'knex'
 
-class SupportingPackageService {
+export default class SupportingPackageService {
+
+  #supportingPackagesManager: SupportingPackagesManager
+
+  #categoryService: CategoryService
+
+  #labelService: LabelService
+
+  constructor(
+    {
+      supportingPackagesManager,
+      categoryService,
+      labelService,
+    }: {
+      supportingPackagesManager: SupportingPackagesManager
+      categoryService: CategoryService
+      labelService: LabelService
+
+    }
+  ) {
+    this.#supportingPackagesManager = supportingPackagesManager
+    this.#categoryService = categoryService
+    this.#labelService = labelService
+
+  }
+
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
     let sharedFilePath = ''
     try {
@@ -138,20 +167,66 @@ class SupportingPackageService {
   //   if (!findSupportingPackage) throw new HttpException(409, "SupportingPackage doesn't exist")
   //   return findSupportingPackage
   // }
-  // public async createSupportingPackage(userData: SupportingPackage): Promise<SupportingPackage> {
-  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')
-  //   const findSupportingPackage: SupportingPackage = await SupportingPackages.query()
-  //     .select()
-  //     .from('users')
-  //     .where('email', '=', userData.email)
-  //     .first()
-  //   if (findSupportingPackage) throw new HttpException(409, `This email ${userData.email} already exists`)
-  //   const hashedPassword = await hash(userData.password, 10)
-  //   const createSupportingPackageData: SupportingPackage = await SupportingPackages.query()
-  //     .insert({ ...userData, password: hashedPassword })
-  //     .into('users')
-  //   return createSupportingPackageData
-  // }
+
+
+  public async createSupportingPackage({
+    supportingPackageRequest,
+    userXRefID
+  }: {
+    supportingPackageRequest: SupportingPackageRequest
+    userXRefID: string
+  }): Promise<SupportingPackage> {
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+    console.log('start')
+    const {
+      categoryUUID,
+      labelUUID,
+      title,
+      number,
+      isConfidential,
+      journalNumber,
+      isDraft,
+      date
+    } = supportingPackageRequest
+    const [label, category] =
+      await Promise.all([
+        this.#labelService.validateAndGetLabels({
+          identifiers: {
+            uuids: [labelUUID],
+          },
+        }),
+        this.#categoryService.validateAndGetCategories({
+          identifiers: {
+            uuids: [categoryUUID],
+          },
+        })
+      ])
+
+    const uuid = v4()
+    const sp = {
+      title,
+      number,
+      entityID: 1,
+      categoryID: category.get(categoryUUID)?.id,
+      labelID: label.get(labelUUID)?.id,
+      isConfidential,
+      journalNumber,
+      isDraft,
+      date,
+      uuid,
+      approverID: 1,
+    }
+
+    console.log('before create')
+    const createdSP = await this.#supportingPackagesManager.createSupportingPackage({
+      supportingPackage: sp,
+      userXRefID,
+    })
+
+    return createdSP
+  }
+
+
   // public async updateSupportingPackage(userId: number, userData: SupportingPackage): Promise<SupportingPackage> {
   //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')
   //   const findSupportingPackage: SupportingPackage[] = await SupportingPackages.query().select().from('users').where('id', '=', userId)
@@ -179,5 +254,3 @@ class SupportingPackageService {
   //   return findSupportingPackage
   // }
 }
-
-export default SupportingPackageService

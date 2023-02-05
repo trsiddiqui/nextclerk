@@ -1,8 +1,8 @@
 import { hash } from 'bcrypt'
-import { User } from '@/types/user'
-import { HttpException } from '@exceptions/HttpException'
-import { Users } from '@models/users.model'
-import { isEmpty } from '@utils/util'
+import { User } from '../types/user'
+import { HttpException } from '../exceptions/HttpException'
+import { Users } from '../models/users.model'
+import { isEmpty } from '../utils/util'
 
 class UserService {
   public async findAllUser(): Promise<User[]> {
@@ -11,7 +11,7 @@ class UserService {
   }
 
   public async findUserById(userId: number): Promise<User> {
-    const findUser: User = await Users.query().findById(userId)
+    const findUser: User | undefined = await Users.query().findById(userId)
     if (!findUser) throw new HttpException(409, "User doesn't exist")
 
     return findUser
@@ -20,7 +20,7 @@ class UserService {
   public async createUser(userData: User): Promise<User> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')
 
-    const findUser: User = await Users.query()
+    const findUser: User | undefined = await Users.query()
       .select()
       .from('users')
       .where('email', '=', userData.email)
@@ -35,7 +35,7 @@ class UserService {
     return createUserData
   }
 
-  public async updateUser(userId: number, userData: User): Promise<User> {
+  public async updateUser(userId: number, userData: User): Promise<User | undefined> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')
 
     const findUser: User[] = await Users.query().select().from('users').where('id', '=', userId)
@@ -47,7 +47,7 @@ class UserService {
       .where('id', '=', userId)
       .into('users')
 
-    const updateUserData: User = await Users.query()
+    const updateUserData: User | undefined = await Users.query()
       .select()
       .from('users')
       .where('id', '=', userId)
@@ -55,8 +55,8 @@ class UserService {
     return updateUserData
   }
 
-  public async deleteUser(userId: number): Promise<User> {
-    const findUser: User = await Users.query()
+  public async deleteUser(userId: number): Promise<User | undefined> {
+    const findUser: User | undefined = await Users.query()
       .select()
       .from('users')
       .where('id', '=', userId)
