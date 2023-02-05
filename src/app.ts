@@ -1,7 +1,7 @@
 import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
-import express from 'express'
+import express, { Router } from 'express'
 import helmet from 'helmet'
 import hpp from 'hpp'
 import morgan from 'morgan'
@@ -10,24 +10,25 @@ import swaggerJSDoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config'
 import knex from '@databases'
-import { Routes } from '@interfaces/routes.interface'
+// import { Routes } from '@interfaces/routes.interface'
 import errorMiddleware from '@/routes/middlewares/error'
 import { logger, stream } from '@utils/logger'
 import { openApiValidatorMiddlewares } from './routes/middlewares/validation'
+import router from './routes/supportingPackage'
 
 class App {
   public app: express.Application
   public env: string
   public port: string | number
 
-  constructor(routes: Routes[]) {
+  constructor(route: Router) {
     this.app = express()
     this.env = NODE_ENV || 'development'
     this.port = PORT || 3000
 
     this.connectToDatabase()
     this.initializeMiddlewares()
-    this.initializeRoutes(routes)
+    this.initializeRoutes(route)
     this.initializeSwagger()
     this.initializeErrorHandling()
   }
@@ -68,10 +69,11 @@ class App {
     )
   }
 
-  private initializeRoutes(routes: Routes[]) {
-    routes.forEach((route) => {
-      this.app.use(`/${route.path ?? ''}`, route.router)
-    })
+  private initializeRoutes(route: Router) {
+    // routes.forEach((route) => {
+    //   this.app.use(`/${route.path ?? ''}`, route.router)
+    // })
+    this.app.use('/', route)
   }
 
   private initializeSwagger() {

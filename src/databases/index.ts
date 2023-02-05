@@ -1,5 +1,5 @@
 import Knex from 'knex';
-import { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } from '@config';
+import { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE } from '../config';
 
 const dbConnection = {
   client: 'pg',
@@ -7,7 +7,7 @@ const dbConnection = {
     charset: 'utf8',
     timezone: 'UTC',
     host: DB_HOST,
-    port: DB_PORT,
+    port: DB_PORT ? Number(DB_PORT) : 3000,
     user: DB_USER,
     password: DB_PASSWORD,
     database: DB_DATABASE,

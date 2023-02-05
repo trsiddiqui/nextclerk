@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('archivedAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('archivedBy').notNullable()
+    table.string('archivedBy')
     table.unique(['uuid'])
   })
   await knex.schema.createTable('labels', (table) => {
@@ -23,7 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('archivedAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('archivedBy').notNullable()
+    table.string('archivedBy')
     table.unique(['uuid'])
   })
   await knex.schema.createTable('categories', (table) => {
@@ -35,7 +35,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('archivedAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('archivedBy').notNullable()
+    table.string('archivedBy')
     table.unique(['uuid'])
   })
   await knex.schema.createTable('files', (table) => {
@@ -49,7 +49,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('archivedAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('archivedBy').notNullable()
+    table.string('archivedBy')
     table.unique(['uuid'])
   })
 
@@ -58,6 +58,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('uuid').notNullable()
     table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
     table.bigInteger('categoryID').notNullable().references('id').inTable('public.categories')
+    table.bigInteger('labelID').notNullable().references('id').inTable('public.labels')
     table.string('title').nullable()
     table.string('number').nullable()
     table.boolean('isConfidential').defaultTo(false).notNullable()
@@ -88,7 +89,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('deletedBy').notNullable()
+    table.string('deletedBy')
   })
 
   await knex.schema.createTable('supporting_packages_communications', (table) => {
@@ -118,7 +119,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('archivedAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('archivedBy').notNullable()
+    table.string('archivedBy')
     table.unique(['uuid'])
   })
 
@@ -135,7 +136,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('deletedBy').notNullable()
+    table.string('deletedBy')
   })
 
   await knex.schema.createTable('supporting_packages_participants', (table) => {
@@ -151,7 +152,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('deleteAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
-    table.string('deletedBy').notNullable()
+    table.string('deletedBy')
   })
 }
 
