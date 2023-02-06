@@ -5,6 +5,7 @@ import { HttpException } from '../exceptions/HttpException'
 import { SupportingPackagesManager } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
+import EntityService from './entities.service'
 import { isEmpty } from '../utils/util'
 import axios from 'axios'
 import querystring from 'querystring'
@@ -19,22 +20,23 @@ export default class SupportingPackageService {
 
   #labelService: LabelService
 
-  constructor(
-    {
-      supportingPackagesManager,
-      categoryService,
-      labelService,
-    }: {
-      supportingPackagesManager: SupportingPackagesManager
-      categoryService: CategoryService
-      labelService: LabelService
+  #entityService: EntityService
 
-    }
-  ) {
+  constructor({
+    supportingPackagesManager,
+    categoryService,
+    labelService,
+    entityService
+  }: {
+    supportingPackagesManager: SupportingPackagesManager
+    categoryService: CategoryService
+    labelService: LabelService
+    entityService: EntityService
+  }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
     this.#labelService = labelService
-
+    this.#entityService = entityService
   }
 
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -170,14 +172,18 @@ export default class SupportingPackageService {
 
 
   public async createSupportingPackage({
+    customerXRefID,
     supportingPackageRequest,
     userXRefID
   }: {
+    customerXRefID: string
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
   }): Promise<SupportingPackage> {
+    await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] }
+    })
     if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
-    console.log('start')
     const {
       categoryUUID,
       labelUUID,

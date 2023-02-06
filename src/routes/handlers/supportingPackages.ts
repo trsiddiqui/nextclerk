@@ -95,11 +95,12 @@ export const createSupportingPackage = async (
 ): Promise<void> => {
   try {
     const supportingPackageRequest = req.body
-    console.log(supportingPackageRequest)
+    const { customerXRefID } = req.params
     const userXRefID = 'testUser'
 
 
     const supportingPackage = await $SupportingPackageService.createSupportingPackage({
+      customerXRefID,
       supportingPackageRequest,
       userXRefID
     })
