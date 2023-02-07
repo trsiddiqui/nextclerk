@@ -1,3 +1,5 @@
+import Excel from 'exceljs'
+import XLSX from 'xlsx'
 import { hash } from 'bcrypt'
 import { v4 } from 'uuid'
 import { SupportingPackage, SupportingPackageRequest } from '../types/supportingPackage'
@@ -6,14 +8,12 @@ import { SupportingPackagesManager } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
 import EntityService from './entities.service'
-import { isEmpty } from '../utils/util'
+import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
-import querystring from 'querystring'
-import { TENANT_ID, CLIENT_ID, CLIENT_CREDENTIALS, DRIVE_ID } from '../config'
+import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
 
 export default class SupportingPackageService {
-
   #supportingPackagesManager: SupportingPackagesManager
 
   #categoryService: CategoryService
@@ -26,7 +26,7 @@ export default class SupportingPackageService {
     supportingPackagesManager,
     categoryService,
     labelService,
-    entityService
+    entityService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
@@ -42,22 +42,7 @@ export default class SupportingPackageService {
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
     let sharedFilePath = ''
     try {
-      const accessToken = (
-        await axios.post(
-          `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
-          querystring.stringify({
-            grant_type: 'client_credentials',
-            client_secret: CLIENT_CREDENTIALS,
-            client_id: CLIENT_ID,
-            scope: 'https://graph.microsoft.com/.default',
-          }),
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-          }
-        )
-      ).data.access_token
+      const accessToken = await getAccessToken()
 
       console.log('got token', accessToken)
 
@@ -160,6 +145,77 @@ export default class SupportingPackageService {
     }
     return sharedFilePath
   }
+
+  // http://localhost:3000/customerXRefID/supporting-packages/123/lineItems/sheet
+  public async getLineItemsSheetContent(
+    customerXRefID: string,
+    supportingPackageXRefID: string
+  ): Promise<unknown> {
+    const accessToken = await getAccessToken()
+
+    console.log('got token', accessToken) // Check if customer folder exists
+    const customers = (
+      await axios.get(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.value
+
+    console.log('customers', JSON.stringify(customers, null, 2))
+
+    let customerFolderId
+    if (!customers.some((customer) => customer.name === customerXRefID)) {
+      return {}
+    }
+
+    // customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
+
+    // Get line items file
+    const files = (
+      await axios.get(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers/${customerXRefID}:/children`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.value
+    console.log('customers', JSON.stringify(files, null, 2))
+    const file = files.find((x) => x.name === 'LineItems.xlsx')
+    // id: 01JODUYB7G3MSGVZCY4JCKB2JLP7HCZHQF
+    console.log('created file', JSON.stringify(file, null, 2))
+
+    const content = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/01JODUYB7G3MSGVZCY4JCKB2JLP7HCZHQF/content`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        responseType: 'arraybuffer',
+      }
+    )
+    // load from buffer
+    const workbook = new Excel.Workbook()
+    await workbook.xlsx.load(content.data)
+    // return workbook.worksheets.map((worksheet) => ({
+    //   name: worksheet.name,
+    //   columns: worksheet.columns.map((column) => column.headers),
+    //   rows: worksheet
+    //     .getRows(0, 100)
+    //     .map((row) => row.values.map((value, index, array) => ({ value, index: index - 1 }))),
+    // }))
+
+    const workbookXLSX = XLSX.read(content.data)
+    const data = XLSX.utils.sheet_to_json(workbookXLSX.Sheets[workbookXLSX.SheetNames[0]])
+
+    return JSON.stringify(data)
+  }
+
   // public async findAllSupportingPackage(): Promise<SupportingPackage[]> {
   //   const users: SupportingPackage[] = await SupportingPackages.query().select().from('users')
   //   return users
@@ -170,43 +226,33 @@ export default class SupportingPackageService {
   //   return findSupportingPackage
   // }
 
-
   public async createSupportingPackage({
     customerXRefID,
     supportingPackageRequest,
-    userXRefID
+    userXRefID,
   }: {
     customerXRefID: string
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
   }): Promise<SupportingPackage> {
     await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [customerXRefID] }
+      identifiers: { uuids: [customerXRefID] },
     })
     if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
-    const {
-      categoryUUID,
-      labelUUID,
-      title,
-      number,
-      isConfidential,
-      journalNumber,
-      isDraft,
-      date
-    } = supportingPackageRequest
-    const [label, category] =
-      await Promise.all([
-        this.#labelService.validateAndGetLabels({
-          identifiers: {
-            uuids: [labelUUID],
-          },
-        }),
-        this.#categoryService.validateAndGetCategories({
-          identifiers: {
-            uuids: [categoryUUID],
-          },
-        })
-      ])
+    const { categoryUUID, labelUUID, title, number, isConfidential, journalNumber, isDraft, date } =
+      supportingPackageRequest
+    const [label, category] = await Promise.all([
+      this.#labelService.validateAndGetLabels({
+        identifiers: {
+          uuids: [labelUUID],
+        },
+      }),
+      this.#categoryService.validateAndGetCategories({
+        identifiers: {
+          uuids: [categoryUUID],
+        },
+      }),
+    ])
 
     const uuid = v4()
     const sp = {
@@ -231,7 +277,6 @@ export default class SupportingPackageService {
 
     return createdSP
   }
-
 
   // public async updateSupportingPackage(userId: number, userData: SupportingPackage): Promise<SupportingPackage> {
   //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')

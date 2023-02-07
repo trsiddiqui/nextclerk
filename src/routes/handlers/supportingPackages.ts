@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express'
 import { SupportingPackage } from '../../types/supportingPackage'
 import { $SupportingPackageService } from '../../services'
 
-
 export const createLineItemsSheet = async (
   req: Request,
   res: Response,
@@ -10,10 +9,26 @@ export const createLineItemsSheet = async (
 ): Promise<void> => {
   try {
     const customerXRefID = req.params.customerXRefID
-    const sharedFilePath = await $SupportingPackageService.createLineItemsSheet(
-      customerXRefID
+    const sharedFilePath = await $SupportingPackageService.createLineItemsSheet(customerXRefID)
+    res.status(201).send(sharedFilePath)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getLineItemSheetContent = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const customerXRefID = req.params.customerXRefID
+    const supportingPackageXRefID = req.params.supportingPackageXRefID
+    const lineItemsSheetData = await $SupportingPackageService.getLineItemsSheetContent(
+      customerXRefID,
+      supportingPackageXRefID
     )
-    res.status(200).send(sharedFilePath)
+    res.status(200).send(lineItemsSheetData)
   } catch (error) {
     next(error)
   }
@@ -98,18 +113,14 @@ export const createSupportingPackage = async (
     const { customerXRefID } = req.params
     const userXRefID = 'testUser'
 
-
     const supportingPackage = await $SupportingPackageService.createSupportingPackage({
       customerXRefID,
       supportingPackageRequest,
-      userXRefID
+      userXRefID,
     })
 
     res.send(supportingPackage)
-
   } catch (error) {
     next(error)
   }
-
 }
-

@@ -1,19 +1,25 @@
 import { Router } from 'express'
-import { createSupportingPackage, createLineItemsSheet } from '../routes/handlers/supportingPackages'
+import {
+  createSupportingPackage,
+  createLineItemsSheet,
+  getLineItemSheetContent,
+} from '../routes/handlers/supportingPackages'
 import { Routes } from '../interfaces/routes.interface'
 import { openApiValidatorMiddlewares } from './middlewares/validation'
 
 const router = Router()
 
 router.get(
+  `/:customerXRefID/supporting-packages/:supportingPackageXRefID/lineItems/sheet`,
+  getLineItemSheetContent
+)
+
+router.get(
   `/:customerXRefID/supporting-packages/lineItems/actions/createSheet`,
   createLineItemsSheet
 )
 
-router.post(
-  `/:customerXRefID/supporting-packages`,
-  createSupportingPackage
-)
+router.post(`/:customerXRefID/supporting-packages`, createSupportingPackage)
 // this.router.use(
 //   ...openApiValidatorMiddlewares({
 //     apiSpec: 'openapi.yaml',
@@ -36,6 +42,5 @@ router.post(
 //   `/supportingPackages/:id`,
 //   this.supportingPackagesController.deleteSupportingPackage
 // )
-
 
 export default router
