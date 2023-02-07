@@ -151,6 +151,7 @@ export default class SupportingPackageService {
     customerXRefID: string,
     supportingPackageXRefID: string
   ): Promise<unknown> {
+    // TODO: Validate supporting package
     const accessToken = await getAccessToken()
 
     console.log('got token', accessToken) // Check if customer folder exists

@@ -9,6 +9,7 @@ import { openApiValidatorMiddlewares } from './middlewares/validation'
 
 const router = Router()
 
+// http://localhost:3000/customerXRefID/supporting-packages/123/lineItems/sheet
 router.get(
   `/:customerXRefID/supporting-packages/:supportingPackageXRefID/lineItems/sheet`,
   getLineItemSheetContent
