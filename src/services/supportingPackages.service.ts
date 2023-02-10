@@ -192,7 +192,7 @@ export default class SupportingPackageService {
     console.log('created file', JSON.stringify(file, null, 2))
 
     const content = await axios.get(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/01JODUYB7G3MSGVZCY4JCKB2JLP7HCZHQF/content`,
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${file.id}/content`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -203,18 +203,16 @@ export default class SupportingPackageService {
     // load from buffer
     const workbook = new Excel.Workbook()
     await workbook.xlsx.load(content.data)
-    // return workbook.worksheets.map((worksheet) => ({
-    //   name: worksheet.name,
-    //   columns: worksheet.columns.map((column) => column.headers),
-    //   rows: worksheet
-    //     .getRows(0, 100)
-    //     .map((row) => row.values.map((value, index, array) => ({ value, index: index - 1 }))),
-    // }))
 
-    const workbookXLSX = XLSX.read(content.data)
-    const data = XLSX.utils.sheet_to_json(workbookXLSX.Sheets[workbookXLSX.SheetNames[0]])
-
-    return JSON.stringify(data)
+    return workbook.worksheets.map((worksheet) => ({
+      name: worksheet.name,
+      columns: worksheet.columns.map((column) => ({
+        address: column.letter,
+        hidden: column.hidden,
+        width: column.width,
+      })),
+      rows: worksheet.getRows(1, worksheet.rowCount).map((row) => row.model),
+    }))
   }
 
   // public async findAllSupportingPackage(): Promise<SupportingPackage[]> {
