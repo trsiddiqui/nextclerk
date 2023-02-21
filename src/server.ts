@@ -1,8 +1,8 @@
-import App from '@/app'
+import App from '../src/app'
 import express from 'express'
-import IndexRoute from '@/routes'
-import UsersRoute from '@/routes/users'
-import validateEnv from '@utils/validateEnv'
+import IndexRoute from '../src/routes'
+import UsersRoute from '../src/routes/users'
+import validateEnv from '../src/utils/validateEnv'
 import routes from '../src/routes/supportingPackage'
 
 validateEnv()

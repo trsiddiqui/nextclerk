@@ -65,7 +65,6 @@ export async function up(knex: Knex): Promise<void> {
     table.string('journalNumber').nullable()
     table.timestamp('date').notNullable()
     table.boolean('isDraft').notNullable()
-    table.bigInteger('approverID').notNullable().references('id').inTable('public.users')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.string('createdBy').notNullable()
@@ -139,7 +138,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('deletedBy')
   })
 
-  await knex.schema.createTable('supporting_packages_participants', (table) => {
+  await knex.schema.createTable('supporting_packages_users', (table) => {
     table.bigIncrements('id').notNullable().primary()
     table
       .bigInteger('supportingPackageID')
@@ -147,6 +146,7 @@ export async function up(knex: Knex): Promise<void> {
       .references('id')
       .inTable('public.supporting_packages')
     table.bigInteger('userID').notNullable().references('id').inTable('public.users')
+    table.bigInteger('type').notNullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('deleteAt')

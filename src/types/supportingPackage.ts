@@ -1,6 +1,5 @@
 import { EntityDate } from '../types'
 export interface SupportingPackageRequest {
-  id: number
   uuid: string
   number: string
   title: string
@@ -20,6 +19,22 @@ export interface SupportingPackage extends EntityDate {
   title: string
   categoryID: number
   labelID: number
+  isConfidential: boolean
+  date: Date
+  isDraft: boolean
+  journalNumber: string
+}
+
+export interface SupportingPackageResponse extends EntityDate {
+  uuid: string
+  number: string
+  title: string
+  entityUUID: string
+  entityName: string
+  categoryUUID: string
+  categoryName: string
+  labelUUID: string
+  label: string
   isConfidential: boolean
   date: Date
   isDraft: boolean

@@ -2,7 +2,7 @@ import Excel from 'exceljs'
 import XLSX from 'xlsx'
 import { hash } from 'bcrypt'
 import { v4 } from 'uuid'
-import { SupportingPackage, SupportingPackageRequest } from '../types/supportingPackage'
+import { SupportingPackage, SupportingPackageRequest, SupportingPackageResponse } from '../types/supportingPackage'
 import { HttpException } from '../exceptions/HttpException'
 import { SupportingPackagesManager } from '../models'
 import CategoryService from '../services/categories.service'
@@ -12,6 +12,7 @@ import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
 import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
+import { Category, Label } from '@/types'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -234,6 +235,7 @@ export default class SupportingPackageService {
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
   }): Promise<SupportingPackage> {
+    console.log(customerXRefID)
     await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [customerXRefID] },
     })
@@ -265,16 +267,164 @@ export default class SupportingPackageService {
       isDraft,
       date,
       uuid,
-      approverID: 1,
     }
 
-    console.log('before create')
     const createdSP = await this.#supportingPackagesManager.createSupportingPackage({
       supportingPackage: sp,
       userXRefID,
     })
 
     return createdSP
+  }
+
+  public async updateSupportingPackage({
+    customerXRefID,
+    supportingPackageUUID,
+    supportingPackageRequest,
+    userXRefID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+    supportingPackageRequest: SupportingPackageRequest
+    userXRefID: string
+  }): Promise<SupportingPackageResponse> {
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    const existingSupportingPackage = await this.getSupportingPackage({
+      customerXRefID,
+      supportingPackageUUID,
+    })
+
+    const {
+      categoryUUID,
+      labelUUID,
+      title,
+      number,
+      isConfidential,
+      journalNumber,
+      isDraft,
+      date
+    } = supportingPackageRequest
+
+    const [label, category] = await Promise.all([
+      this.#labelService.validateAndGetLabels({
+        identifiers: {
+          uuids: [labelUUID],
+        },
+      }),
+      this.#categoryService.validateAndGetCategories({
+        identifiers: {
+          uuids: [categoryUUID],
+        },
+      }),
+    ])
+    if (
+      existingSupportingPackage.title !== title ||
+      existingSupportingPackage.number !== number ||
+      existingSupportingPackage.date !== date ||
+      existingSupportingPackage.categoryUUID !== categoryUUID ||
+      existingSupportingPackage.labelUUID !== labelUUID ||
+      existingSupportingPackage.isConfidential !== isConfidential ||
+      existingSupportingPackage.journalNumber !== journalNumber ||
+      existingSupportingPackage.isDraft !== isDraft
+    ) {
+      await this.#supportingPackagesManager.updateSupportingPackage({
+        entityID: String(entity.get(customerXRefID).id),
+        supportingPackage: {
+          title,
+          number,
+          isConfidential,
+          journalNumber,
+          isDraft,
+          date,
+          categoryID: category.get(categoryUUID).id,
+          labelID: label.get(labelUUID).id,
+        },
+        userXRefID,
+        identifier: { supportingPackageUUID }
+      })
+    }
+
+    return this.getSupportingPackage({
+      customerXRefID,
+      supportingPackageUUID
+    })
+  }
+
+  public async getSupportingPackage({
+    customerXRefID,
+    supportingPackageUUID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+  }): Promise<SupportingPackageResponse> {
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+
+    const supportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID({
+      uuid: supportingPackageUUID
+    })
+
+    if (!supportingPackage) {
+      throw new Error('supporting package could not be found')
+    }
+
+    const {
+      uuid,
+      number,
+      title,
+      isConfidential,
+      date,
+      isDraft,
+      journalNumber,
+      createdAt,
+      createdBy,
+      updatedAt,
+      updatedBy,
+    } = supportingPackage
+
+    const [supportingPackageLabel, supportingPackageCategory] = await Promise.all([
+      this.#labelService.validateAndGetLabels({
+        identifiers: {
+          ids: [supportingPackage.labelID.toString()],
+        },
+      }),
+      this.#categoryService.validateAndGetCategories({
+        identifiers: {
+          ids: [String(supportingPackage.categoryID)],
+        },
+      }),
+    ])
+    const label = supportingPackageLabel.entries().next().value
+    const labelName = supportingPackageLabel.get(label[0]).label
+    const category = supportingPackageCategory.entries().next().value
+    const categoryName = supportingPackageCategory.get(category[0]).name
+
+    return {
+      uuid,
+      number,
+      title,
+      entityUUID: entity.get(customerXRefID).uuid,
+      entityName: entity.get(customerXRefID).name,
+      categoryUUID: category[0],
+      categoryName,
+      labelUUID: label[0],
+      label: labelName,
+      isConfidential,
+      journalNumber,
+      isDraft,
+      date,
+      createdAt,
+      createdBy,
+      updatedAt,
+      updatedBy,
+    }
+
   }
 
   // public async updateSupportingPackage(userId: number, userData: SupportingPackage): Promise<SupportingPackage> {

@@ -110,6 +110,7 @@ export const createSupportingPackage = async (
 ): Promise<void> => {
   try {
     const supportingPackageRequest = req.body
+    console.log(req.params)
     const { customerXRefID } = req.params
     const userXRefID = 'testUser'
 
@@ -119,7 +120,30 @@ export const createSupportingPackage = async (
       userXRefID,
     })
 
-    res.send(supportingPackage)
+    res.status(201).json(supportingPackage)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const updateSupportingPackage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const supportingPackageRequest = req.body
+    const { customerXRefID, supportingPackageUUID } = req.params
+    const userXRefID = 'testUser'
+
+    const updatedSupportingPackage = await $SupportingPackageService.updateSupportingPackage({
+      customerXRefID,
+      supportingPackageUUID,
+      supportingPackageRequest,
+      userXRefID,
+    })
+
+    res.status(200).json(updatedSupportingPackage)
   } catch (error) {
     next(error)
   }
