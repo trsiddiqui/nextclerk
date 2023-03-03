@@ -3,11 +3,15 @@ import {
   $CategoriesManager,
   $SupportingPackagesManager,
   $EntitiesManager,
+  $UserManager,
+  $SupportingPackagesUsersManager,
 } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
 import SupportingPackageService from '../services/supportingPackages.service'
 import EntityService from './entities.service'
+import UserService from './user.service'
+import SupportingPackageUserService from './supportingPackagesUsers.service'
 
 export const $CategoryService = new CategoryService({
   categoriesManager: $CategoriesManager
@@ -21,9 +25,19 @@ export const $EntityService = new EntityService({
   entitiesManager: $EntitiesManager
 })
 
+export const $UserService = new UserService({
+  userManager: $UserManager
+})
+
+export const $SupportingPackageUserService = new SupportingPackageUserService({
+  supportingPackagesUsersManager: $SupportingPackagesUsersManager,
+  usersService: $UserService
+})
+
 export const $SupportingPackageService = new SupportingPackageService({
   supportingPackagesManager: $SupportingPackagesManager,
   categoryService: $CategoryService,
   labelService: $LabelService,
-  entityService: $EntityService
+  entityService: $EntityService,
+  supportingPackagesUsersService: $SupportingPackageUserService
 })

@@ -4,7 +4,7 @@ import { hash } from 'bcrypt'
 import { v4 } from 'uuid'
 import { SupportingPackage, SupportingPackageRequest, SupportingPackageResponse } from '../types/supportingPackage'
 import { HttpException } from '../exceptions/HttpException'
-import { SupportingPackagesManager } from '../models'
+import { SupportingPackagesManager, SupportingPackagesUsersManager } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
 import EntityService from './entities.service'
@@ -13,6 +13,7 @@ import axios from 'axios'
 import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
 import { Category, Label } from '@/types'
+import SupportingPackageUserService from './supportingPackagesUsers.service'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -23,21 +24,27 @@ export default class SupportingPackageService {
 
   #entityService: EntityService
 
+  #supportingPackagesUsersService: SupportingPackageUserService
+
+
   constructor({
     supportingPackagesManager,
     categoryService,
     labelService,
     entityService,
+    supportingPackagesUsersService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
     labelService: LabelService
     entityService: EntityService
+    supportingPackagesUsersService: SupportingPackageUserService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
     this.#labelService = labelService
     this.#entityService = entityService
+    this.#supportingPackagesUsersService = supportingPackagesUsersService
   }
 
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -375,6 +382,7 @@ export default class SupportingPackageService {
     }
 
     const {
+      id,
       uuid,
       number,
       title,
@@ -405,6 +413,12 @@ export default class SupportingPackageService {
     const category = supportingPackageCategory.entries().next().value
     const categoryName = supportingPackageCategory.get(category[0]).name
 
+    const usersMap = await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
+      ids: [id.toString()]
+    })
+
+    const users = usersMap.get(id.toString())
+
     return {
       uuid,
       number,
@@ -419,6 +433,7 @@ export default class SupportingPackageService {
       journalNumber,
       isDraft,
       date,
+      users,
       createdAt,
       createdBy,
       updatedAt,

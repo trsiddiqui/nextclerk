@@ -17,6 +17,14 @@ class UserService {
     return findUser
   }
 
+  public async findUsersByIds(ids: number[]): Promise<User[]> {
+    const findUsers: User[] | undefined = await Users.query().findByIds(ids)
+
+    if (!findUsers) throw new HttpException(409, "User doesn't exist")
+
+    return findUsers
+  }
+
   public async createUser(userData: User): Promise<User> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')
 
