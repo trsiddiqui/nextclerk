@@ -2,7 +2,11 @@ import Excel from 'exceljs'
 import XLSX from 'xlsx'
 import { hash } from 'bcrypt'
 import { v4 } from 'uuid'
-import { SupportingPackage, SupportingPackageRequest, SupportingPackageResponse } from '../types/supportingPackage'
+import {
+  SupportingPackage,
+  SupportingPackageRequest,
+  SupportingPackageResponse,
+} from '../types/supportingPackage'
 import { HttpException } from '../exceptions/HttpException'
 import { SupportingPackagesManager, SupportingPackagesUsersManager } from '../models'
 import CategoryService from '../services/categories.service'
@@ -25,7 +29,6 @@ export default class SupportingPackageService {
   #entityService: EntityService
 
   #supportingPackagesUsersService: SupportingPackageUserService
-
 
   constructor({
     supportingPackagesManager,
@@ -195,7 +198,7 @@ export default class SupportingPackageService {
       )
     ).data.value
     console.log('customers', JSON.stringify(files, null, 2))
-    const file = files.find((x) => x.name === 'LineItems.xlsx')
+    const file = files.find((x) => x.name === 'DEF REV WATERFALL AS OF 12-31-22 v2.xlsx')
     // id: 01JODUYB7G3MSGVZCY4JCKB2JLP7HCZHQF
     console.log('created file', JSON.stringify(file, null, 2))
 
@@ -208,6 +211,7 @@ export default class SupportingPackageService {
         responseType: 'arraybuffer',
       }
     )
+    // return content.data
     // load from buffer
     const workbook = new Excel.Workbook()
     await workbook.xlsx.load(content.data)
@@ -220,6 +224,7 @@ export default class SupportingPackageService {
         width: column.width,
       })),
       rows: worksheet.getRows(1, worksheet.rowCount).map((row) => row.model),
+      // return theme
     }))
   }
 
@@ -306,16 +311,8 @@ export default class SupportingPackageService {
       supportingPackageUUID,
     })
 
-    const {
-      categoryUUID,
-      labelUUID,
-      title,
-      number,
-      isConfidential,
-      journalNumber,
-      isDraft,
-      date
-    } = supportingPackageRequest
+    const { categoryUUID, labelUUID, title, number, isConfidential, journalNumber, isDraft, date } =
+      supportingPackageRequest
 
     const [label, category] = await Promise.all([
       this.#labelService.validateAndGetLabels({
@@ -352,13 +349,13 @@ export default class SupportingPackageService {
           labelID: label.get(labelUUID).id,
         },
         userXRefID,
-        identifier: { supportingPackageUUID }
+        identifier: { supportingPackageUUID },
       })
     }
 
     return this.getSupportingPackage({
       customerXRefID,
-      supportingPackageUUID
+      supportingPackageUUID,
     })
   }
 
@@ -374,7 +371,7 @@ export default class SupportingPackageService {
     })
 
     const supportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID({
-      uuid: supportingPackageUUID
+      uuid: supportingPackageUUID,
     })
 
     if (!supportingPackage) {
@@ -413,9 +410,10 @@ export default class SupportingPackageService {
     const category = supportingPackageCategory.entries().next().value
     const categoryName = supportingPackageCategory.get(category[0]).name
 
-    const usersMap = await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
-      ids: [id.toString()]
-    })
+    const usersMap =
+      await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
+        ids: [id.toString()],
+      })
 
     const users = usersMap.get(id.toString())
 
@@ -439,7 +437,6 @@ export default class SupportingPackageService {
       updatedAt,
       updatedBy,
     }
-
   }
 
   // public async updateSupportingPackage(userId: number, userData: SupportingPackage): Promise<SupportingPackage> {

@@ -28,7 +28,11 @@ export const getLineItemSheetContent = async (
       customerXRefID,
       supportingPackageXRefID
     )
-    res.status(200).send(lineItemsSheetData)
+    res.writeHead(200, [
+      ['Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    ])
+    res.end(Buffer.from(lineItemsSheetData as string, 'base64'))
+    // res.status(200).send(lineItemsSheetData)
   } catch (error) {
     next(error)
   }
