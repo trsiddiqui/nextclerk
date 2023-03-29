@@ -32,7 +32,6 @@ export const getLineItemSheetContent = async (
       ['Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
     ])
     res.end(Buffer.from(lineItemsSheetData as string, 'base64'))
-    // res.status(200).send(lineItemsSheetData)
   } catch (error) {
     next(error)
   }

@@ -211,21 +211,21 @@ export default class SupportingPackageService {
         responseType: 'arraybuffer',
       }
     )
-    // return content.data
-    // load from buffer
-    const workbook = new Excel.Workbook()
-    await workbook.xlsx.load(content.data)
+    return content.data
+    // // load from buffer
+    // const workbook = new Excel.Workbook()
+    // await workbook.xlsx.load(content.data)
 
-    return workbook.worksheets.map((worksheet) => ({
-      name: worksheet.name,
-      columns: worksheet.columns.map((column) => ({
-        address: column.letter,
-        hidden: column.hidden,
-        width: column.width,
-      })),
-      rows: worksheet.getRows(1, worksheet.rowCount).map((row) => row.model),
-      // return theme
-    }))
+    // return workbook.worksheets.map((worksheet) => ({
+    //   name: worksheet.name,
+    //   columns: worksheet.columns.map((column) => ({
+    //     address: column.letter,
+    //     hidden: column.hidden,
+    //     width: column.width,
+    //   })),
+    //   rows: worksheet.getRows(1, worksheet.rowCount).map((row) => row.model),
+    //   // return theme
+    // }))
   }
 
   // public async findAllSupportingPackage(): Promise<SupportingPackage[]> {
