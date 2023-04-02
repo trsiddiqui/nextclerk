@@ -13,10 +13,15 @@ export interface SupportingPackageUser extends EntityDateWithDelete {
 }
 
 export interface SupportingPackageUserResponse {
-  supportingPackageID: string
-  userID: string
+  uuid: string
   type: SupportingPackageUserType
   name: string
   family: string
-  email: string
 }
+
+export interface SupportingPackageUserRequest {
+  uuid: string
+  type: SupportingPackageUserType
+}
+
+export type ApplicableSupportingPackagesUsersResponse = Record<string, SupportingPackageUserResponse[]>

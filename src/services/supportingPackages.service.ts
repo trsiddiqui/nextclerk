@@ -12,6 +12,7 @@ import { SupportingPackagesManager, SupportingPackagesUsersManager } from '../mo
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
 import EntityService from './entities.service'
+import UserService from './user.service'
 import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
 import { DRIVE_ID } from '../config'
@@ -28,6 +29,8 @@ export default class SupportingPackageService {
 
   #entityService: EntityService
 
+  #userService: UserService
+
   #supportingPackagesUsersService: SupportingPackageUserService
 
   constructor({
@@ -35,18 +38,21 @@ export default class SupportingPackageService {
     categoryService,
     labelService,
     entityService,
+    userService,
     supportingPackagesUsersService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
     labelService: LabelService
     entityService: EntityService
+    userService: UserService
     supportingPackagesUsersService: SupportingPackageUserService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
     this.#labelService = labelService
     this.#entityService = entityService
+    this.#userService = userService
     this.#supportingPackagesUsersService = supportingPackagesUsersService
   }
 
@@ -246,15 +252,25 @@ export default class SupportingPackageService {
     customerXRefID: string
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
-  }): Promise<SupportingPackage> {
+  }): Promise<SupportingPackageResponse> {
     console.log(customerXRefID)
     await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [customerXRefID] },
     })
     if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
-    const { categoryUUID, labelUUID, title, number, isConfidential, journalNumber, isDraft, date } =
-      supportingPackageRequest
-    const [label, category] = await Promise.all([
+    const {
+      categoryUUID,
+      labelUUID,
+      title,
+      number,
+      isConfidential,
+      journalNumber,
+      isDraft,
+      date,
+      users
+    } = supportingPackageRequest
+
+    const [label, category, usersRequest] = await Promise.all([
       this.#labelService.validateAndGetLabels({
         identifiers: {
           uuids: [labelUUID],
@@ -263,6 +279,11 @@ export default class SupportingPackageService {
       this.#categoryService.validateAndGetCategories({
         identifiers: {
           uuids: [categoryUUID],
+        },
+      }),
+      this.#userService.validateAndGetUsers({
+        identifiers: {
+          uuids: [... new Set(users.map(u => u.uuid))],
         },
       }),
     ])
@@ -286,7 +307,19 @@ export default class SupportingPackageService {
       userXRefID,
     })
 
-    return createdSP
+    await this.#supportingPackagesUsersService.insertSupportingPackageAndUserRelationships({
+      relationships: users.map((user) => ({
+        supportingPackageID: createdSP.id.toString(),
+        userID: usersRequest.get(user.uuid).id,
+        type: user.type
+      })),
+      userXRefID
+    })
+
+    return this.getSupportingPackage({
+      customerXRefID,
+      supportingPackageUUID: createdSP.uuid
+    })
   }
 
   public async updateSupportingPackage({
@@ -300,21 +333,19 @@ export default class SupportingPackageService {
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
   }): Promise<SupportingPackageResponse> {
-    const entity = await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [customerXRefID] },
-    })
+    const {
+      categoryUUID,
+      labelUUID,
+      title,
+      number,
+      isConfidential,
+      journalNumber,
+      isDraft,
+      date,
+      users
+    } = supportingPackageRequest
 
-    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
-
-    const existingSupportingPackage = await this.getSupportingPackage({
-      customerXRefID,
-      supportingPackageUUID,
-    })
-
-    const { categoryUUID, labelUUID, title, number, isConfidential, journalNumber, isDraft, date } =
-      supportingPackageRequest
-
-    const [label, category] = await Promise.all([
+    const [label, category, mapUser] = await Promise.all([
       this.#labelService.validateAndGetLabels({
         identifiers: {
           uuids: [labelUUID],
@@ -325,7 +356,28 @@ export default class SupportingPackageService {
           uuids: [categoryUUID],
         },
       }),
+      this.#userService.validateAndGetUsers({
+        identifiers: {
+          uuids: [... new Set(users.map(u => u.uuid))],
+        },
+      }),
     ])
+
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID({
+      uuid: supportingPackageUUID,
+    })
+
+    const existingSupportingPackage = await this.getSupportingPackage({
+      customerXRefID,
+      supportingPackageUUID,
+    })
+
     if (
       existingSupportingPackage.title !== title ||
       existingSupportingPackage.number !== number ||
@@ -352,6 +404,12 @@ export default class SupportingPackageService {
         identifier: { supportingPackageUUID },
       })
     }
+
+    await this.#supportingPackagesUsersService.upsertSupportingPackageAndUserRelationship({
+      supportingPackageId: coreSupportingPackage.id.toString(),
+      users,
+      userXRefID
+    })
 
     return this.getSupportingPackage({
       customerXRefID,
@@ -410,12 +468,9 @@ export default class SupportingPackageService {
     const category = supportingPackageCategory.entries().next().value
     const categoryName = supportingPackageCategory.get(category[0]).name
 
-    const usersMap =
-      await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
-        ids: [id.toString()],
-      })
-
-    const users = usersMap.get(id.toString())
+    const users = await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
+      ids: [id.toString()]
+    })
 
     return {
       uuid,
@@ -431,7 +486,7 @@ export default class SupportingPackageService {
       journalNumber,
       isDraft,
       date,
-      users,
+      users: users[id],
       createdAt,
       createdBy,
       updatedAt,

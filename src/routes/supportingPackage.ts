@@ -4,6 +4,7 @@ import {
   createLineItemsSheet,
   getLineItemSheetContent,
   updateSupportingPackage,
+  getSupportingPackage,
 } from '../routes/handlers/supportingPackages'
 import { Routes } from '../interfaces/routes.interface'
 import { openApiValidatorMiddlewares } from './middlewares/validation'
@@ -23,6 +24,7 @@ router.get(
 
 router.post(`/:customerXRefID/supporting-packages`, createSupportingPackage)
 router.put(`/:customerXRefID/supporting-package/:supportingPackageUUID`, updateSupportingPackage)
+router.get(`/:customerXRefID/supporting-package/:supportingPackageUUID`, getSupportingPackage)
 // this.router.use(
 //   ...openApiValidatorMiddlewares({
 //     apiSpec: 'openapi.yaml',

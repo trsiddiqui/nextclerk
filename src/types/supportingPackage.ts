@@ -1,4 +1,4 @@
-import { EntityDate, SupportingPackageUserResponse } from '../types'
+import { EntityDate, SupportingPackageUserResponse, SupportingPackageUserRequest } from '../types'
 export interface SupportingPackageRequest {
   uuid: string
   number: string
@@ -10,6 +10,7 @@ export interface SupportingPackageRequest {
   date: Date
   isDraft: boolean
   journalNumber?: string
+  users: SupportingPackageUserRequest[]
 }
 
 export interface SupportingPackage extends EntityDate {
@@ -39,5 +40,5 @@ export interface SupportingPackageResponse extends EntityDate {
   date: Date
   isDraft: boolean
   journalNumber: string
-  users: SupportingPackageUserResponse
+  users: SupportingPackageUserResponse[]
 }

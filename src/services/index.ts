@@ -39,5 +39,6 @@ export const $SupportingPackageService = new SupportingPackageService({
   categoryService: $CategoryService,
   labelService: $LabelService,
   entityService: $EntityService,
+  userService: $UserService,
   supportingPackagesUsersService: $SupportingPackageUserService
 })

@@ -1,11 +1,13 @@
 import { Knex } from 'knex'
 import { DateTime } from 'luxon'
 import { SupportingPackage, SupportingPackageUser } from '../types'
+import RelationsManager from './relations.model'
 
-export default class SupportingPackagesUsersManager {
+export default class SupportingPackagesUsersManager extends RelationsManager {
   #knex: Knex
 
   constructor(knex: Knex) {
+    super(knex)
     this.#knex = knex
   }
 
@@ -30,79 +32,49 @@ export default class SupportingPackagesUsersManager {
     return supportingPackagesUsers
   }
 
-  public async getSupportingPackagesByUUID({
+  public async insertSupportingPackageUsersRelation({
+    supportingPackageUsersRelationships,
+    userXRefID,
+  }: {
+    supportingPackageUsersRelationships: Partial<SupportingPackageUser>[]
+    userXRefID: string
+  }): Promise<SupportingPackageUser[]> {
+    const relationships = await this.#knex
+      .withSchema('public')
+      .table('supporting_packages_users')
+      .insert(
+        supportingPackageUsersRelationships.map((supportingPackageUsersRelationship) => ({
+          ...supportingPackageUsersRelationship,
+          createdAt: DateTime.utc(),
+          createdBy: userXRefID,
+          updatedAt: DateTime.utc(),
+          updatedBy: userXRefID,
+        }))
+      )
+      .returning<SupportingPackageUser[]>('*')
+    return relationships
+  }
+
+  public async upsertSupportingPackageAndUserRelationship({
     txn,
-    uuid,
+    supportingPackageAndUserRelationship,
+    userXRefID,
   }: {
     txn?: Knex.Transaction
-    uuid: string
-  }): Promise<SupportingPackage> {
-    let query = this.#knex
-      .withSchema('public')
-      .table('supporting_packages')
-      .select<SupportingPackage>('*')
-      .where({ uuid })
-      .first()
-
-    if (txn) {
-      query = query.transacting(txn)
-    }
-
-    const supportingPackages = await query
-    return supportingPackages
-  }
-
-  public async createSupportingPackage({
-    supportingPackage,
-    userXRefID,
-  }: {
-    supportingPackage: Partial<SupportingPackage>
+    supportingPackageAndUserRelationship: Partial<SupportingPackageUser>
     userXRefID: string
-  }): Promise<SupportingPackage> {
-    const [createdSupportingPackage] = await this.#knex
-      .withSchema('public')
-      .table('supporting_packages')
-      .insert({
-        ...supportingPackage,
-        createdAt: DateTime.utc(),
-        createdBy: userXRefID,
-        updatedAt: DateTime.utc(),
-        updatedBy: userXRefID,
-      })
-      .returning<SupportingPackage[]>('*')
-    return createdSupportingPackage
-  }
+  }): Promise<SupportingPackageUser> {
+    const relation = await super.upsertRelations<
+      SupportingPackageUser,
+      SupportingPackageUser
+    >({
+      relationEntity: supportingPackageAndUserRelationship,
+      tableName: 'supporting_packages_users',
+      keys: ['supportingPackageID', 'userID', 'type'],
+      txn,
+      userXRefID,
+    })
 
-  public async updateSupportingPackage({
-    entityID,
-    identifier,
-    supportingPackage,
-    userXRefID,
-  }: {
-    entityID: string
-    userXRefID: string
-    supportingPackage: Partial<SupportingPackage>
-    identifier: { supportingPackageUUID: string } | { supportingPackageID: string }
-  }): Promise<SupportingPackage> {
-    let query = this.#knex
-      .withSchema('public')
-      .table('supporting_packages')
-      .update<SupportingPackage>({
-        ...supportingPackage,
-        updatedAt: DateTime.utc(),
-        updatedBy: userXRefID,
-      })
-      .where({ entityID })
-
-    if ('supportingPackageUUID' in identifier) {
-      query = query.where('uuid', identifier.supportingPackageUUID)
-    }
-
-    if ('supportingPackageID' in identifier) {
-      query = query.where('id', identifier.supportingPackageID)
-    }
-
-    const [supportingPackageResponse] = await query.returning<SupportingPackage[]>('*')
-    return supportingPackageResponse
+    return relation
   }
 }
