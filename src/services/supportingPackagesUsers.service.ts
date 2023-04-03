@@ -117,8 +117,6 @@ export default class SupportingPackageUserService {
     const existingSupportingPackageUsersRelationships =
       existingSupportingUserRelationshipsRecord[supportingPackageId]
 
-    console.log(existingSupportingPackageUsersRelationships)
-
     const existingUsers = await this.#usersService.validateAndGetUsers({
       identifiers: {
         uuids: [...new Set(existingSupportingPackageUsersRelationships.map((user) => user.uuid))],
@@ -131,7 +129,6 @@ export default class SupportingPackageUserService {
         users.map(user => user.type).indexOf(sp.type) === -1
       )
     )
-    console.log(supportingPackageUsersToBeRemoved)
 
     await Promise.all(
       supportingPackageUsersToBeRemoved.map(async (spUser) => {
