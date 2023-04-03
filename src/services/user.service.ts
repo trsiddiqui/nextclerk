@@ -39,7 +39,6 @@ export default class UserService {
     const inputLength =
       'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
-    console.log(inputLength)
     if (returnedUsers.length !== inputLength) {
       throw new Error('One or more of the reference Users could not be found.')
     }

@@ -56,11 +56,11 @@ export default class SupportingPackagesUsersManager extends RelationsManager {
   }
 
   public async upsertSupportingPackageAndUserRelationship({
-    txn,
+
     supportingPackageAndUserRelationship,
     userXRefID,
   }: {
-    txn?: Knex.Transaction
+
     supportingPackageAndUserRelationship: Partial<SupportingPackageUser>
     userXRefID: string
   }): Promise<SupportingPackageUser> {
@@ -71,7 +71,6 @@ export default class SupportingPackagesUsersManager extends RelationsManager {
       relationEntity: supportingPackageAndUserRelationship,
       tableName: 'supporting_packages_users',
       keys: ['supportingPackageID', 'userID', 'type'],
-      txn,
       userXRefID,
     })
 

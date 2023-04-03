@@ -1,8 +1,8 @@
-import { DateTime } from 'luxon'
 import { SupportingPackagesUsersManager } from '../models'
 import { ApplicableSupportingPackagesUsersResponse, SupportingPackageUser, SupportingPackageUserRequest, SupportingPackageUserResponse, User } from '../types'
 import UserService from '../services/user.service'
 import { findElementsDiff } from './helpers/general'
+import { DateTime } from 'luxon'
 
 export default class SupportingPackageUserService {
 
@@ -39,7 +39,7 @@ export default class SupportingPackageUserService {
       const key = current.supportingPackageID
       return {
         ...result,
-        [key]: result[key] !== undefined ? result[key].concat(current) : [current],
+        [key]: result[key] !== undefined && current.deletedAt !== null ? result[key].concat(current) : [current],
       }
     }, {} as Record<string, SupportingPackageUser[]>)
 
@@ -48,7 +48,9 @@ export default class SupportingPackageUserService {
       if (relationshipsMapped[supportingPackageId] === undefined) {
         results[supportingPackageId] = []
       } else {
-        const spUsers = supportingPackagesUsersRecords.filter(sp => sp.supportingPackageID === supportingPackageId)
+        const spUsers = supportingPackagesUsersRecords.filter(
+          sp => sp.supportingPackageID === supportingPackageId
+        )
         const supportingPackageUsersIds = [...new Set(spUsers.map(sp => (sp.userID)))]
         const usersEntity = await this.#usersService.getUsersByIds({
           identifiers: {
@@ -61,7 +63,6 @@ export default class SupportingPackageUserService {
           name: usersEntity.find(user => user.id === sp.userID).name,
           family: usersEntity.find(user => user.id === sp.userID).family,
           uuid: usersEntity.find(user => user.id === sp.userID).uuid,
-
         }))
 
         results[supportingPackageId] = users
@@ -116,32 +117,30 @@ export default class SupportingPackageUserService {
     const existingSupportingPackageUsersRelationships =
       existingSupportingUserRelationshipsRecord[supportingPackageId]
 
+    console.log(existingSupportingPackageUsersRelationships)
+
     const existingUsers = await this.#usersService.validateAndGetUsers({
       identifiers: {
         uuids: [...new Set(existingSupportingPackageUsersRelationships.map((user) => user.uuid))],
       },
     })
-    const supportingPackageUserXRefIdsToBeRemoved = findElementsDiff(
-      existingSupportingPackageUsersRelationships.map((user) => user.uuid),
-      users.map((user) => user.uuid)
+
+    const supportingPackageUsersToBeRemoved = existingSupportingPackageUsersRelationships.filter(sp =>
+      (users.map((user) => user.uuid).indexOf(sp.uuid) === -1) ||
+      (users.map((user) => user.uuid).indexOf(sp.uuid) !== -1 &&
+        users.map(user => user.type).indexOf(sp.type) === -1
+      )
     )
-    // const menuGroupItemsWithSameRank = menuItems.filter((mi) =>
-    //   existingSupportingPackageUsersRelationships.apiResponse.find(
-    //     (emi) => emi.XRefID === mi.XRefID && emi.rank === mi.rank
-    //   )
-    // )
-    const supportingPackageUserXRefIdsToAdd = [...users.map(user => user.uuid)].filter(
-      (uuid) => !supportingPackageUserXRefIdsToBeRemoved.includes(uuid)
-    )
+    console.log(supportingPackageUsersToBeRemoved)
 
     await Promise.all(
-      supportingPackageUserXRefIdsToBeRemoved.map(async (userUUID) => {
+      supportingPackageUsersToBeRemoved.map(async (spUser) => {
         return this.#supportingPackagesUsersManager.upsertSupportingPackageAndUserRelationship({
           supportingPackageAndUserRelationship: {
             supportingPackageID: supportingPackageId,
-            userID: existingUsers.get(userUUID)?.id,
+            userID: existingUsers.get(spUser.uuid)?.id,
             type: existingSupportingPackageUsersRelationships.find(
-              (espu) => espu.uuid === userUUID
+              (espu) => espu.uuid === spUser.uuid
             )?.type,
             deletedAt: DateTime.utc(),
             deletedBy: userXRefID,

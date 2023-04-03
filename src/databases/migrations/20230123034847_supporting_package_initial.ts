@@ -67,8 +67,10 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('isDraft').notNullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('archivedAt')
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
+    table.string('archivedBy')
     table.unique(['uuid'])
   })
   await knex.schema.createTable('supporting_packages_attachments', (table) => {
@@ -153,6 +155,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
     table.string('deletedBy')
+    table.unique(['supportingPackageID', 'userID', 'type'])
   })
 }
 
