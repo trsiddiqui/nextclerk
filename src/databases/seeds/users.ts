@@ -14,7 +14,8 @@ export async function seed(knex: Knex): Promise<void> {
         email: 'abc@gmail.com',
         name: 'testName',
         family: 'testFamily',
-        password: 'abc123'
+        password: 'abc123',
+        entityID: '1',
       }
     ]);
 }

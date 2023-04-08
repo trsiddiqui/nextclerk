@@ -5,9 +5,11 @@ import {
   getLineItemSheetContent,
   updateSupportingPackage,
   getSupportingPackage,
+  getCategories,
 } from '../routes/handlers/supportingPackages'
 import { Routes } from '../interfaces/routes.interface'
 import { openApiValidatorMiddlewares } from './middlewares/validation'
+import { getEntityUsers } from './handlers/users'
 
 const router = Router()
 
@@ -22,9 +24,19 @@ router.get(
   createLineItemsSheet
 )
 
+router.get(
+  `/supporting-packages/categories`,
+  getCategories
+)
+
+router.get(
+  `/:customerXRefID/users`,
+  getEntityUsers
+)
+
 router.post(`/:customerXRefID/supporting-packages`, createSupportingPackage)
-router.put(`/:customerXRefID/supporting-package/:supportingPackageUUID`, updateSupportingPackage)
-router.get(`/:customerXRefID/supporting-package/:supportingPackageUUID`, getSupportingPackage)
+router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, updateSupportingPackage)
+router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, getSupportingPackage)
 // this.router.use(
 //   ...openApiValidatorMiddlewares({
 //     apiSpec: 'openapi.yaml',

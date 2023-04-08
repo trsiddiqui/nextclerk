@@ -21,17 +21,17 @@ export default class EntityService {
     identifiers: { uuids: string[] } | { ids: string[] }
   }): Promise<Map<string, Entity>> {
 
-    const returnedLabels = await this.#entitiesManager.getEntitiesByIdentifiers({
+    const returnedEntities = await this.#entitiesManager.getEntitiesByIdentifiers({
       identifiers,
     })
 
     const inputLength =
       'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
-    if (returnedLabels.length !== inputLength) {
+    if (returnedEntities.length !== inputLength) {
       throw new Error('One or more of the reference Entities could not be found')
     }
-    return new Map(returnedLabels.map((obj) => [obj.uuid, obj]))
+    return new Map(returnedEntities.map((obj) => [obj.uuid, obj]))
   }
 
 }

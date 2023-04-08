@@ -26,7 +26,8 @@ export const $EntityService = new EntityService({
 })
 
 export const $UserService = new UserService({
-  userManager: $UserManager
+  userManager: $UserManager,
+  entityService: $EntityService
 })
 
 export const $SupportingPackageUserService = new SupportingPackageUserService({

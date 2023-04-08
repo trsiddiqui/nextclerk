@@ -33,4 +33,23 @@ export default class UsersManager {
     return query
   }
 
+  public async getUsersByEntityIds({
+    txn,
+    ids,
+  }: {
+    txn?: Knex.Transaction
+    ids: string[]
+  }): Promise<User[]> {
+    let query = this.#knex.withSchema('public')
+      .table('users')
+      .select<User[]>('*')
+      .whereIn('id', ids)
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+
+    return query
+  }
+
 }

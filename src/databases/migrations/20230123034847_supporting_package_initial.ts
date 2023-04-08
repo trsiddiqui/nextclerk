@@ -73,6 +73,11 @@ export async function up(knex: Knex): Promise<void> {
     table.string('archivedBy')
     table.unique(['uuid'])
   })
+
+  await knex.schema.alterTable('users', (table) => {
+    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
+  })
+
   await knex.schema.createTable('supporting_packages_attachments', (table) => {
     table.bigIncrements('id').notNullable().primary()
     table

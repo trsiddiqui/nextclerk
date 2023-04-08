@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import UsersHandler from '@/routes/handlers/users'
+import UsersHandler from '@/routes/handlers/user'
 import { Routes } from '@interfaces/routes.interface'
 import { openApiValidatorMiddlewares } from './middlewares/validation'
 
@@ -21,6 +21,10 @@ class UsersRoute implements Routes {
     this.router.post(`/users`, this.usersController.createUser)
     this.router.put(`/users/:id`, this.usersController.updateUser)
     this.router.delete(`/users/:id`, this.usersController.deleteUser)
+    this.router.get(
+      `/:customerXRefID/users`,
+      this.usersController.getEntityUsers
+    )
   }
 }
 

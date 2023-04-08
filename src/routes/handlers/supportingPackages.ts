@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
-import { SupportingPackage } from '../../types/supportingPackage'
-import { $SupportingPackageService } from '../../services'
+import { Knex } from 'knex'
+import { $CategoryService, $SupportingPackageService } from '../../services'
 
 export const createLineItemsSheet = async (
   req: Request,
@@ -165,6 +165,21 @@ export const getSupportingPackage = async (
     })
 
     res.status(200).json(supportingPackage)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getCategories = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+
+    const categories = await $CategoryService.getCategories()
+
+    res.status(200).json(categories)
   } catch (error) {
     next(error)
   }

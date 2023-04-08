@@ -1,18 +1,24 @@
 
 import { CategoriesManager, UserManager } from '../models'
 import { User } from '../types'
+import EntityService from './entities.service'
 
 export default class UserService {
 
   #userManager: UserManager
 
+  #entityService: EntityService
+
   constructor({
     userManager,
+    entityService,
   }: {
     userManager: UserManager
+    entityService: EntityService
 
   }) {
     this.#userManager = userManager
+    this.#entityService = entityService
   }
 
   public async getUsersByIds({
@@ -43,6 +49,23 @@ export default class UserService {
       throw new Error('One or more of the reference Users could not be found.')
     }
     return new Map(returnedUsers.map((obj) => [obj.uuid, obj]))
+  }
+
+  public async getEntitiesUsers({
+    customerXRefID,
+  }: {
+    customerXRefID: string
+  }): Promise<User[]> {
+    const users = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] }
+    })
+
+    const entityUsers = await this.#userManager.getUsersByEntityIds({
+      ids: [users.get(customerXRefID).id.toString()],
+    })
+
+    return entityUsers
+
   }
 
 }

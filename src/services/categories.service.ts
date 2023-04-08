@@ -33,4 +33,13 @@ export default class CategoryService {
     return new Map(returnedCategories.map((obj) => [obj.uuid, obj]))
   }
 
+  public async getCategories(): Promise<Category[]> {
+    console.log('Majid')
+    const categories = await this.#categoriesManager.getAllCategories({
+      txn: null
+    })
+
+    return categories
+  }
+
 }

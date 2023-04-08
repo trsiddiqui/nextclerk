@@ -33,4 +33,18 @@ export default class CategoriesManager {
     return query
   }
 
+  public async getAllCategories({
+    txn,
+  }: {
+    txn?: Knex.Transaction
+  }): Promise<Category[]> {
+    let query = this.#knex.withSchema('public').table('categories').select<Category[]>('*')
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+
+    return query
+  }
+
 }
