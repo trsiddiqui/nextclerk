@@ -56,11 +56,9 @@ export default class SupportingPackagesUsersManager extends RelationsManager {
   }
 
   public async upsertSupportingPackageAndUserRelationship({
-
     supportingPackageAndUserRelationship,
     userXRefID,
   }: {
-
     supportingPackageAndUserRelationship: Partial<SupportingPackageUser>
     userXRefID: string
   }): Promise<SupportingPackageUser> {

@@ -1,18 +1,18 @@
-import { $UserService } from '../../services'
+import { $CustomerService, $UserService } from '../../services'
 import { NextFunction, Request, Response } from 'express'
 
-export const getEntityUsers = async (
+export const getEntityCustomers = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { customerXRefID } = req.params
-    const entityUsers = await $UserService.getEntitiesUsers({
+    const entityCustomers = await $CustomerService.getCustomers({
       customerXRefID
     })
 
-    res.status(200).json(entityUsers)
+    res.status(200).json(entityCustomers)
   } catch (error) {
     next(error)
   }

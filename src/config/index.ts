@@ -18,4 +18,6 @@ export const {
   CLIENT_ID,
   CLIENT_CREDENTIALS,
   DRIVE_ID,
+  QUICKBOOK_CLIENT_ID,
+  QUICKBOOK_CLIENT_SECRET,
 } = process.env

@@ -5,10 +5,22 @@ import EntitiesManager from './entities.model'
 import SupportingPackagesUsersManager from './supportingPackagesUsers.model'
 import UserManager from './user.model'
 import Knex from '../databases'
+import DepartmentsManager from './departments.model'
+import AccountsManager from './accounts.model'
+import CustomersManager from './customers.model'
+import LocationsManager from './location.model'
 
 const $LabelsManager = new LabelsManager(Knex)
 
 const $CategoriesManager = new CategoriesManager(Knex)
+
+const $DepartmentsManager = new DepartmentsManager(Knex)
+
+const $AccountsManager = new AccountsManager(Knex)
+
+const $CustomersManager = new CustomersManager(Knex)
+
+const $LocationsManager = new LocationsManager(Knex)
 
 const $SupportingPackagesManager = new SupportingPackagesManager(Knex)
 
@@ -32,4 +44,12 @@ export {
   $SupportingPackagesUsersManager,
   UserManager,
   $UserManager,
+  DepartmentsManager,
+  $DepartmentsManager,
+  AccountsManager,
+  $AccountsManager,
+  CustomersManager,
+  $CustomersManager,
+  LocationsManager,
+  $LocationsManager,
 }

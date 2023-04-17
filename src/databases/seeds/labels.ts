@@ -7,12 +7,13 @@ export async function seed(knex: Knex): Promise<void> {
 
   // Inserts seed entries
 
-  await knex('labels').insert([
-    {
-      uuid: '78a32159-d09a-4e10-a293-e3939535a738',
-      label: 'Label 1',
-      createdBy: 'testUser',
-      updatedBy: 'testUSer'
-    }
-  ])
+  // await knex('labels').insert([
+  //   {
+  //     uuid: '78a32159-d09a-4e10-a293-e3939535a738',
+  //     entityID: '1',
+  //     label: 'Label 1',
+  //     createdBy: 'testUser',
+  //     updatedBy: 'testUSer'
+  //   }
+  // ])
 }

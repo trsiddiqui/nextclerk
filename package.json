@@ -37,6 +37,7 @@
     "express-openapi-validator": "^5.0.0",
     "helmet": "^5.1.1",
     "hpp": "^0.2.3",
+    "intuit-oauth": "^4.0.0",
     "jsonwebtoken": "^8.5.1",
     "knex": "^2.2.0",
     "luxon": "^3.2.1",

@@ -10,6 +10,11 @@ import {
 import { Routes } from '../interfaces/routes.interface'
 import { openApiValidatorMiddlewares } from './middlewares/validation'
 import { getEntityUsers } from './handlers/users'
+import { syncIntegrationData } from './handlers/integrations'
+import { getEntityDepartments } from './handlers/departments'
+import { getEntityLocations } from './handlers/locations'
+import { getEntityCustomers } from './handlers/customers'
+import { getEntityAccounts } from './handlers/accounts'
 
 const router = Router()
 
@@ -32,6 +37,31 @@ router.get(
 router.get(
   `/:customerXRefID/users`,
   getEntityUsers
+)
+
+router.get(
+  `/:customerXRefID/departments`,
+  getEntityDepartments
+)
+
+router.get(
+  `/:customerXRefID/locations`,
+  getEntityLocations
+)
+
+router.get(
+  `/:customerXRefID/accounts`,
+  getEntityAccounts
+)
+
+router.get(
+  `/:customerXRefID/customers`,
+  getEntityCustomers
+)
+
+router.post(
+  `/:customerXRefID/syncIntegrationData`,
+  syncIntegrationData
 )
 
 router.post(`/:customerXRefID/supporting-packages`, createSupportingPackage)

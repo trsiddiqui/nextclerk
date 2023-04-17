@@ -1,11 +1,13 @@
 import { Knex } from 'knex'
 import { DateTime } from 'luxon'
 import { Department } from '../types'
+import RelationsManager from './relations.model'
 
-export default class DepartmentsManager {
+export default class DepartmentsManager extends RelationsManager {
   #knex: Knex
 
   constructor(knex: Knex) {
+    super(knex)
     this.#knex = knex
   }
 
@@ -34,17 +36,42 @@ export default class DepartmentsManager {
   }
 
   public async getAllDepartments({
+    entityID,
     txn,
   }: {
+    entityID: number
     txn?: Knex.Transaction
   }): Promise<Department[]> {
-    let query = this.#knex.withSchema('public').table('departments').select<Department[]>('*')
+    let query = this.#knex.withSchema('public')
+      .table('departments')
+      .select<Department[]>('*')
+      .where({ entityID })
 
     if (txn) {
       query = query.transacting(txn)
     }
 
     return query
+  }
+
+  public async upsertDepartments({
+    customer,
+    userXRefID,
+  }: {
+    customer: Partial<Department>
+    userXRefID: string
+  }): Promise<Department> {
+    const integrationEntity = await super.upsertRelations<
+      Department,
+      Department
+    >({
+      relationEntity: customer,
+      tableName: 'departments',
+      keys: ['entityID', 'integrationID', 'uuid'],
+      userXRefID,
+    })
+
+    return integrationEntity
   }
 
 }

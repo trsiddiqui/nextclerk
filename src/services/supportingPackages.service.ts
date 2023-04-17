@@ -253,7 +253,7 @@ export default class SupportingPackageService {
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
   }): Promise<SupportingPackageResponse> {
-    console.log(customerXRefID)
+
     await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [customerXRefID] },
     })
