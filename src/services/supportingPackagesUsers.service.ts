@@ -1,11 +1,16 @@
 import { SupportingPackagesUsersManager } from '../models'
-import { ApplicableSupportingPackagesUsersResponse, SupportingPackageUser, SupportingPackageUserRequest, SupportingPackageUserResponse, User } from '../types'
+import {
+  ApplicableSupportingPackagesUsersResponse,
+  SupportingPackageUser,
+  SupportingPackageUserRequest,
+  SupportingPackageUserResponse,
+  User,
+} from '../types'
 import UserService from '../services/user.service'
 import { findElementsDiff } from './helpers/general'
 import { DateTime } from 'luxon'
 
 export default class SupportingPackageUserService {
-
   #supportingPackagesUsersManager: SupportingPackagesUsersManager
 
   #usersService: UserService
@@ -16,7 +21,6 @@ export default class SupportingPackageUserService {
   }: {
     supportingPackagesUsersManager: SupportingPackagesUsersManager
     usersService: UserService
-
   }) {
     this.#supportingPackagesUsersManager = supportingPackagesUsersManager
     this.#usersService = usersService
@@ -27,10 +31,12 @@ export default class SupportingPackageUserService {
   }: {
     ids: string[]
   }): Promise<ApplicableSupportingPackagesUsersResponse> {
-
-    const supportingPackagesUsersRecords = await this.#supportingPackagesUsersManager.getAllUsersSupportingPackageBySupportingPackageIDs({
-      ids,
-    })
+    const supportingPackagesUsersRecords =
+      await this.#supportingPackagesUsersManager.getAllUsersSupportingPackageBySupportingPackageIDs(
+        {
+          ids,
+        }
+      )
     if (!supportingPackagesUsersRecords.length) {
       throw new Error('Users not found for this supporting package.')
     }
@@ -39,7 +45,10 @@ export default class SupportingPackageUserService {
       const key = current.supportingPackageID
       return {
         ...result,
-        [key]: result[key] !== undefined && current.deletedAt !== null ? result[key].concat(current) : [current],
+        [key]:
+          result[key] !== undefined && current.deletedAt !== null
+            ? result[key].concat(current)
+            : [current],
       }
     }, {} as Record<string, SupportingPackageUser[]>)
 
@@ -49,28 +58,26 @@ export default class SupportingPackageUserService {
         results[supportingPackageId] = []
       } else {
         const spUsers = supportingPackagesUsersRecords.filter(
-          sp => sp.supportingPackageID === supportingPackageId
+          (sp) => sp.supportingPackageID === supportingPackageId
         )
-        const supportingPackageUsersIds = [...new Set(spUsers.map(sp => (sp.userID)))]
+        const supportingPackageUsersIds = [...new Set(spUsers.map((sp) => sp.userID))]
         const usersEntity = await this.#usersService.getUsersByIds({
           identifiers: {
             ids: supportingPackageUsersIds,
           },
         })
 
-        const users = relationshipsMapped[supportingPackageId].map(sp => ({
+        const users = relationshipsMapped[supportingPackageId].map((sp) => ({
           type: sp.type,
-          name: usersEntity.find(user => user.id === sp.userID).name,
-          family: usersEntity.find(user => user.id === sp.userID).family,
-          uuid: usersEntity.find(user => user.id === sp.userID).uuid,
+          name: usersEntity.find((user) => user.id === sp.userID).name,
+          family: usersEntity.find((user) => user.id === sp.userID).family,
+          uuid: usersEntity.find((user) => user.id === sp.userID).uuid,
         }))
 
         results[supportingPackageId] = users
-
       }
     }
     return results
-
   }
 
   public async insertSupportingPackageAndUserRelationships({
@@ -80,7 +87,6 @@ export default class SupportingPackageUserService {
     relationships: Partial<SupportingPackageUser>[]
     userXRefID: string
   }): Promise<SupportingPackageUser[]> {
-
     if (relationships.length === 0) {
       return []
     }
@@ -108,11 +114,10 @@ export default class SupportingPackageUserService {
     users: SupportingPackageUserRequest[]
     userXRefID: string
   }): Promise<ApplicableSupportingPackagesUsersResponse> {
-    const existingSupportingUserRelationshipsRecord = await this.getSupportingPackagesUsersBySupportingPackageIds(
-      {
-        ids: [supportingPackageId]
-      }
-    )
+    const existingSupportingUserRelationshipsRecord =
+      await this.getSupportingPackagesUsersBySupportingPackageIds({
+        ids: [supportingPackageId],
+      })
 
     const existingSupportingPackageUsersRelationships =
       existingSupportingUserRelationshipsRecord[supportingPackageId]
@@ -123,11 +128,11 @@ export default class SupportingPackageUserService {
       },
     })
 
-    const supportingPackageUsersToBeRemoved = existingSupportingPackageUsersRelationships.filter(sp =>
-      (users.map((user) => user.uuid).indexOf(sp.uuid) === -1) ||
-      (users.map((user) => user.uuid).indexOf(sp.uuid) !== -1 &&
-        users.map(user => user.type).indexOf(sp.type) === -1
-      )
+    const supportingPackageUsersToBeRemoved = existingSupportingPackageUsersRelationships.filter(
+      (sp) =>
+        users.map((user) => user.uuid).indexOf(sp.uuid) === -1 ||
+        (users.map((user) => user.uuid).indexOf(sp.uuid) !== -1 &&
+          users.map((user) => user.type).indexOf(sp.type) === -1)
     )
 
     await Promise.all(
@@ -139,7 +144,7 @@ export default class SupportingPackageUserService {
             type: existingSupportingPackageUsersRelationships.find(
               (espu) => espu.uuid === spUser.uuid
             )?.type,
-            deletedAt: DateTime.utc(),
+            deletedAt: DateTime.utc().toJSDate(),
             deletedBy: userXRefID,
           },
           userXRefID,
@@ -175,5 +180,4 @@ export default class SupportingPackageUserService {
 
     return updatedRelationships
   }
-
 }

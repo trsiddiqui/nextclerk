@@ -8,15 +8,15 @@ export const syncIntegrationData = async (
 ): Promise<void> => {
   try {
     const { customerXRefID } = req.params
-    const entityUsers = await $IntegrationService.syncIntegrationData({
-      customerXRefID
+    const authUri = await $IntegrationService.syncIntegrationData({
+      customerXRefID,
     })
 
-    res.status(200)
+    // Redirect the authUri
+    res.redirect(authUri)
+
+    // res.status(200)
   } catch (error) {
     next(error)
   }
 }
-
-
-

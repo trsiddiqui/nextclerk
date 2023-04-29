@@ -7,15 +7,12 @@ export const getEntityAccounts = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { customerXRefID } = req.params
-    const entityAccounts = await $AccountService.getAccounts({
-      customerXRefID
-    })
-
-    res.status(200).json(entityAccounts)
+    // const { customerXRefID } = req.params
+    // const entityAccounts = await $AccountService.getAccounts({
+    //   customerXRefID
+    // })
+    // res.status(200).json(entityAccounts)
   } catch (error) {
     next(error)
   }
 }
-
-

@@ -19,6 +19,7 @@ import { getEntityAccounts } from './handlers/accounts'
 const router = Router()
 
 // http://localhost:3000/customerXRefID/supporting-packages/123/lineItems/sheet
+
 router.get(
   `/:customerXRefID/supporting-packages/:supportingPackageXRefID/lineItems/sheet`,
   getLineItemSheetContent
@@ -29,40 +30,19 @@ router.get(
   createLineItemsSheet
 )
 
-router.get(
-  `/supporting-packages/categories`,
-  getCategories
-)
+router.get(`/supporting-packages/categories`, getCategories)
 
-router.get(
-  `/:customerXRefID/users`,
-  getEntityUsers
-)
+router.get(`/:customerXRefID/users`, getEntityUsers)
 
-router.get(
-  `/:customerXRefID/departments`,
-  getEntityDepartments
-)
+router.get(`/:customerXRefID/departments`, getEntityDepartments)
 
-router.get(
-  `/:customerXRefID/locations`,
-  getEntityLocations
-)
+router.get(`/:customerXRefID/locations`, getEntityLocations)
 
-router.get(
-  `/:customerXRefID/accounts`,
-  getEntityAccounts
-)
+router.get(`/:customerXRefID/accounts`, getEntityAccounts)
 
-router.get(
-  `/:customerXRefID/customers`,
-  getEntityCustomers
-)
+router.get(`/:customerXRefID/customers`, getEntityCustomers)
 
-router.post(
-  `/:customerXRefID/syncIntegrationData`,
-  syncIntegrationData
-)
+router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 
 router.post(`/:customerXRefID/supporting-packages`, createSupportingPackage)
 router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, updateSupportingPackage)

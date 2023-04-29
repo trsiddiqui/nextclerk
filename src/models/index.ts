@@ -9,10 +9,13 @@ import DepartmentsManager from './departments.model'
 import AccountsManager from './accounts.model'
 import CustomersManager from './customers.model'
 import LocationsManager from './location.model'
+import CustomerAuthDetailsManager from './customerAuthDetails'
 
 const $LabelsManager = new LabelsManager(Knex)
 
 const $CategoriesManager = new CategoriesManager(Knex)
+
+const $CustomerAuthDetailsManager = new CustomerAuthDetailsManager(Knex)
 
 const $DepartmentsManager = new DepartmentsManager(Knex)
 
@@ -29,7 +32,6 @@ const $EntitiesManager = new EntitiesManager(Knex)
 const $SupportingPackagesUsersManager = new SupportingPackagesUsersManager(Knex)
 
 const $UserManager = new UserManager(Knex)
-
 
 export {
   LabelsManager,
@@ -52,4 +54,6 @@ export {
   $CustomersManager,
   LocationsManager,
   $LocationsManager,
+  CustomerAuthDetailsManager,
+  $CustomerAuthDetailsManager,
 }

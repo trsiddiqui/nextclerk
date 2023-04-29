@@ -14,21 +14,22 @@ import knex from '../src/databases'
 import errorMiddleware from '../src/routes/middlewares/error'
 import { logger, stream } from '../src/utils/logger'
 import { openApiValidatorMiddlewares } from './routes/middlewares/validation'
-import router from './routes/supportingPackage'
+import supportingPackageRoutes from './routes/supportingPackage'
+import thirdParthAuthRoutes from './routes/thirdPartyAuth'
 
 class App {
   public app: express.Application
   public env: string
   public port: string | number
 
-  constructor(route: Router) {
+  constructor() {
     this.app = express()
     this.env = NODE_ENV || 'development'
     this.port = PORT || 3000
 
     this.connectToDatabase()
     this.initializeMiddlewares()
-    this.initializeRoutes(route)
+    this.initializeRoutes()
     this.initializeSwagger()
     this.initializeErrorHandling()
   }
@@ -69,11 +70,13 @@ class App {
     )
   }
 
-  private initializeRoutes(route: Router) {
-    // routes.forEach((route) => {
-    //   this.app.use(`/${route.path ?? ''}`, route.router)
-    // })
-    this.app.use('/', route)
+  private initializeRoutes() {
+    this.app.use('/api', supportingPackageRoutes)
+    this.app.use('/third-party-auth', thirdParthAuthRoutes)
+    this.app.use(function errorHandler(err, req, res, next) {
+      console.error(err)
+      res.status(500)
+    })
   }
 
   private initializeSwagger() {

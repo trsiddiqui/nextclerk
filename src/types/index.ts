@@ -1,4 +1,5 @@
 export * from '../types/common'
+export * from '../types/customerAuthDetails'
 export * from '../types/supportingPackage'
 export * from '../types/user'
 export * from '../types/label'

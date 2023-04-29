@@ -1,11 +1,12 @@
-
-
-```
 1. yarn
-2. openssl enc -d -pbkdf2 -pass pass:YOUR_PASSWORD_ASK_TAHA -in .env.development.local.enc -out .env.development.local
-3. docker-compose up
-4. yarn db-prepare
-5. yarn dev
-```
+2. docker-compose up -d
+3. yarn db-prepare
+4. yarn dev
 
-.env files are encoded using `openssl enc -pbkdf2 -in .env.development.local -out .env.development.local.enc` with a 13 character alphnumeric+special characters password.
+Quickbooks Integration
+We need to do an authorization flow with quickbooks even after the customer has provided their ClientID and ClientSecret. Once they have performed the flow, we will store their refresh token and keep it handy until it expires so we can refresh the access token and use it.
+
+To make it work on local, use the following flow.
+1. Visit http://localhost:3000/third-party-auth/quickbooks/auth-request?entityID=f590257b-a925-45d3-b980-26ff13faf64e
+2. Use the access token in the redis cache for the entityID (realmID or applicationID)
+3. If the access token is expired, use the refresh token in the database
