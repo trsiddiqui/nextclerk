@@ -75,7 +75,7 @@ export const quickBookAuthResponseHandler = async (
         },
       })
 
-      redis.set(
+      await redis.set(
         req.query.realmId,
         authResponse.token.access_token,
         'EX',
