@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import  multer  from 'multer'
 import {
   createSupportingPackage,
   createLineItemsSheet,
@@ -15,8 +16,39 @@ import { getEntityDepartments } from './handlers/departments'
 import { getEntityLocations } from './handlers/locations'
 import { getEntityCustomers } from './handlers/customers'
 import { getEntityAccounts } from './handlers/accounts'
+import { Uploader } from './handlers/uploader'
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, './uploads/')
+  },
+
+  filename: function (req: any, file: any, cb: any) {
+      cb(null, file.originalname)
+  }
+})
+
+const fileFilter = (req: any,file: any,cb: any) => {
+  if(file.mimetype === "image/jpg"  ||
+     file.mimetype === "image/jpeg"  ||
+     file.mimetype ===  "application/pdf" ||
+     file.mimetype ===  "application/vnd.ms-excel" ||
+     file.mimetype ===  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+     {
+      cb(null, true)
+     } else {
+      cb(new Error("upload file is not of type jpg/jpeg or Excel or pdf file"),false)
+
+  }
+}
+
+const upload = multer({storage: storage, fileFilter : fileFilter})
+
 
 const router = Router()
+
+
+router.post(`/:customerXRefID/supporting-packages/upload`, upload.single('file'), Uploader.Upload);
 
 // http://localhost:3000/customerXRefID/supporting-packages/123/lineItems/sheet
 

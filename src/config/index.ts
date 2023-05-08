@@ -25,4 +25,7 @@ export const {
   REDIS_HOST,
   REDIS_PORT,
   REDIS_PASSWORD,
+  AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY,
+  BUCKET_NAME,
 } = process.env

@@ -19,6 +19,8 @@ import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
 import { Category, Label } from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
+import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
+import FileService from './files.service'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -31,7 +33,11 @@ export default class SupportingPackageService {
 
   #userService: UserService
 
+  #fileService: FileService
+
   #supportingPackagesUsersService: SupportingPackageUserService
+
+  #supportingPackageAttachmentService: SupportingPackageAttachmentService
 
   constructor({
     supportingPackagesManager,
@@ -39,21 +45,27 @@ export default class SupportingPackageService {
     labelService,
     entityService,
     userService,
+    fileService,
     supportingPackagesUsersService,
+    supportingPackageAttachmentService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
     labelService: LabelService
     entityService: EntityService
     userService: UserService
+    fileService: FileService
     supportingPackagesUsersService: SupportingPackageUserService
+    supportingPackageAttachmentService: SupportingPackageAttachmentService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
     this.#labelService = labelService
     this.#entityService = entityService
     this.#userService = userService
+    this.#fileService = fileService
     this.#supportingPackagesUsersService = supportingPackagesUsersService
+    this.#supportingPackageAttachmentService = supportingPackageAttachmentService
   }
 
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -267,10 +279,11 @@ export default class SupportingPackageService {
       journalNumber,
       isDraft,
       date,
-      users
+      users,
+      files
     } = supportingPackageRequest
 
-    const [label, category, usersRequest] = await Promise.all([
+    const [label, category, usersRequest, attachment] = await Promise.all([
       this.#labelService.validateAndGetLabels({
         identifiers: {
           uuids: [labelUUID],
@@ -286,6 +299,12 @@ export default class SupportingPackageService {
           uuids: [... new Set(users.map(u => u.uuid))],
         },
       }),
+      this.#fileService.validateAndGetFiles({
+        identifiers: {
+          uuids: [... new Set(files.map(f => f.uuid))],
+        },
+      }),
+
     ])
 
     const uuid = v4()
@@ -312,6 +331,18 @@ export default class SupportingPackageService {
         supportingPackageID: createdSP.id.toString(),
         userID: usersRequest.get(user.uuid).id,
         type: user.type
+      })),
+      userXRefID
+    })
+
+    // add supporting package files
+    await this.#supportingPackageAttachmentService.insertSupportingPackageAndAttachmentRelationships({
+      relationships: files.map((file) => ({
+        supportingPackageID: createdSP.id,
+        fileID: attachment.get(file.uuid).id,
+        name:  attachment.get(file.uuid).name,
+        mimeType:  attachment.get(file.uuid).mimeType,
+        isMaster: file.isMaster ?? false,
       })),
       userXRefID
     })
@@ -472,6 +503,10 @@ export default class SupportingPackageService {
       ids: [id.toString()]
     })
 
+    const files = await this.#supportingPackageAttachmentService.getSupportingPackagesAttachmentsBySupportingPackageId({
+      id: id.toString()
+    })
+
     return {
       uuid,
       number,
@@ -487,6 +522,7 @@ export default class SupportingPackageService {
       isDraft,
       date,
       users: users[id],
+      files,
       createdAt,
       createdBy,
       updatedAt,

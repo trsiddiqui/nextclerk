@@ -34,7 +34,6 @@ export default class CategoryService {
   }
 
   public async getCategories(): Promise<Category[]> {
-    console.log('Majid')
     const categories = await this.#categoriesManager.getAllCategories({
       txn: null
     })

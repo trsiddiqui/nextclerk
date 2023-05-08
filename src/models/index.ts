@@ -10,6 +10,8 @@ import AccountsManager from './accounts.model'
 import CustomersManager from './customers.model'
 import LocationsManager from './location.model'
 import CustomerAuthDetailsManager from './customerAuthDetails'
+import FilesManager from './files'
+import SupportingPackagesAttachmentsManager from './supportingPackagesAttachments.model'
 
 const $LabelsManager = new LabelsManager(Knex)
 
@@ -32,6 +34,11 @@ const $EntitiesManager = new EntitiesManager(Knex)
 const $SupportingPackagesUsersManager = new SupportingPackagesUsersManager(Knex)
 
 const $UserManager = new UserManager(Knex)
+
+const $FilesManager = new FilesManager(Knex)
+
+const $SupportingPackagesAttachmentsManager = new SupportingPackagesAttachmentsManager(Knex)
+
 
 export {
   LabelsManager,
@@ -56,4 +63,8 @@ export {
   $LocationsManager,
   CustomerAuthDetailsManager,
   $CustomerAuthDetailsManager,
+  FilesManager,
+  $FilesManager,
+  SupportingPackagesAttachmentsManager,
+  $SupportingPackagesAttachmentsManager
 }
