@@ -10,6 +10,8 @@ import {
   $CustomersManager,
   $AccountsManager,
   $CustomerAuthDetailsManager,
+  $SupportingPackagesAttachmentsManager,
+  $FilesManager,
 } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
@@ -23,6 +25,8 @@ import CustomerService from './customers.service'
 import AccountService from './accounts.service'
 import IntegrationService from './integrations.service'
 import CustomerAuthDetailsService from './customerAuthDetails.service'
+import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
+import FileService from './files.service'
 
 export const $CategoryService = new CategoryService({
   categoriesManager: $CategoriesManager,
@@ -69,9 +73,18 @@ export const $UserService = new UserService({
   entityService: $EntityService,
 })
 
+export const $FileService = new FileService({
+  fileManager: $FilesManager,
+})
+
 export const $SupportingPackageUserService = new SupportingPackageUserService({
   supportingPackagesUsersManager: $SupportingPackagesUsersManager,
   usersService: $UserService,
+})
+
+export const $SupportingPackageAttachmentService = new SupportingPackageAttachmentService({
+  supportingPackagesAttachmentsManager: $SupportingPackagesAttachmentsManager,
+  fileService: $FileService,
 })
 
 export const $SupportingPackageService = new SupportingPackageService({
@@ -80,5 +93,7 @@ export const $SupportingPackageService = new SupportingPackageService({
   labelService: $LabelService,
   entityService: $EntityService,
   userService: $UserService,
+  fileService: $FileService,
+  supportingPackageAttachmentService: $SupportingPackageAttachmentService,
   supportingPackagesUsersService: $SupportingPackageUserService,
 })

@@ -50,6 +50,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigIncrements('id').notNullable().primary()
     table.string('uuid').notNullable()
     table.text('name').notNullable()
+    table.string('mimeType', 50).nullable()
     table.text('location').notNullable()
     table.text('remoteReferenceUuid').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
@@ -118,11 +119,6 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('isCellLinkValid')
     table.text('text').notNullable()
     table
-      .bigInteger('attachmentId')
-      .notNullable()
-      .references('id')
-      .inTable('public.supporting_packages_attachments')
-    table
       .bigInteger('replyToCommunicationId')
       .notNullable()
       .references('id')
@@ -135,6 +131,25 @@ export async function up(knex: Knex): Promise<void> {
     table.string('updatedBy').notNullable()
     table.string('archivedBy')
     table.unique(['uuid'])
+  })
+
+  await knex.schema.createTable('communications_attachments', (table) => {
+    table.bigIncrements('id').notNullable().primary()
+    table
+      .bigInteger('communicationID')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages_communications')
+    table.bigInteger('fileID').notNullable().references('id').inTable('public.files')
+    table.string('name')
+    table.string('mimeType')
+    table.integer('size')
+    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('deleteAt')
+    table.string('createdBy').notNullable()
+    table.string('updatedBy').notNullable()
+    table.string('deletedBy')
   })
 
   await knex.schema.createTable('communications_users', (table) => {
