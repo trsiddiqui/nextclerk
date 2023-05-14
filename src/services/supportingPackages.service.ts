@@ -204,7 +204,7 @@ export default class SupportingPackageService {
       )
     ).data.value
     console.log('customers', JSON.stringify(files, null, 2))
-    const file = files.find((x) => x.name === 'DEF REV WATERFALL AS OF 12-31-22 v2.xlsx')
+    const file = files.find((x) => x.name === 'LineItems.xlsx')
     // id: 01JODUYB7G3MSGVZCY4JCKB2JLP7HCZHQF
     console.log('created file', JSON.stringify(file, null, 2))
 
@@ -253,7 +253,6 @@ export default class SupportingPackageService {
     supportingPackageRequest: SupportingPackageRequest
     userXRefID: string
   }): Promise<SupportingPackageResponse> {
-
     await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [customerXRefID] },
     })
@@ -267,7 +266,7 @@ export default class SupportingPackageService {
       journalNumber,
       isDraft,
       date,
-      users
+      users,
     } = supportingPackageRequest
 
     const [label, category, usersRequest] = await Promise.all([
@@ -283,7 +282,7 @@ export default class SupportingPackageService {
       }),
       this.#userService.validateAndGetUsers({
         identifiers: {
-          uuids: [... new Set(users.map(u => u.uuid))],
+          uuids: [...new Set(users.map((u) => u.uuid))],
         },
       }),
     ])
@@ -311,14 +310,14 @@ export default class SupportingPackageService {
       relationships: users.map((user) => ({
         supportingPackageID: createdSP.id.toString(),
         userID: usersRequest.get(user.uuid).id,
-        type: user.type
+        type: user.type,
       })),
-      userXRefID
+      userXRefID,
     })
 
     return this.getSupportingPackage({
       customerXRefID,
-      supportingPackageUUID: createdSP.uuid
+      supportingPackageUUID: createdSP.uuid,
     })
   }
 
@@ -342,7 +341,7 @@ export default class SupportingPackageService {
       journalNumber,
       isDraft,
       date,
-      users
+      users,
     } = supportingPackageRequest
 
     const [label, category, mapUser] = await Promise.all([
@@ -358,7 +357,7 @@ export default class SupportingPackageService {
       }),
       this.#userService.validateAndGetUsers({
         identifiers: {
-          uuids: [... new Set(users.map(u => u.uuid))],
+          uuids: [...new Set(users.map((u) => u.uuid))],
         },
       }),
     ])
@@ -369,9 +368,11 @@ export default class SupportingPackageService {
 
     if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
 
-    const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID({
-      uuid: supportingPackageUUID,
-    })
+    const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID(
+      {
+        uuid: supportingPackageUUID,
+      }
+    )
 
     const existingSupportingPackage = await this.getSupportingPackage({
       customerXRefID,
@@ -408,7 +409,7 @@ export default class SupportingPackageService {
     await this.#supportingPackagesUsersService.upsertSupportingPackageAndUserRelationship({
       supportingPackageId: coreSupportingPackage.id.toString(),
       users,
-      userXRefID
+      userXRefID,
     })
 
     return this.getSupportingPackage({
@@ -468,9 +469,10 @@ export default class SupportingPackageService {
     const category = supportingPackageCategory.entries().next().value
     const categoryName = supportingPackageCategory.get(category[0]).name
 
-    const users = await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
-      ids: [id.toString()]
-    })
+    const users =
+      await this.#supportingPackagesUsersService.getSupportingPackagesUsersBySupportingPackageIds({
+        ids: [id.toString()],
+      })
 
     return {
       uuid,
