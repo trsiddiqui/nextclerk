@@ -74,8 +74,8 @@ class App {
   }
 
   private initializeRoutes() {
-    this.app.use('/api/:customerXRefID/supporting-packages', supportingPackageRoutes)
-    this.app.use('/api/:customerXRefID', genericRoutes)
+    this.app.use('/api', supportingPackageRoutes)
+    this.app.use('/api', genericRoutes)
     this.app.use('/api/global', fileRoutes)
     this.app.use('/third-party-auth', thirdPartyAuthRoutes)
     this.app.use(function errorHandler(err, req, res, next) {

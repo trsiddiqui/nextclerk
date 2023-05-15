@@ -9,18 +9,18 @@ import { getEntityUsers } from './handlers/users'
 
 const router = Router()
 
-router.get(`/categories`, getCategories)
+router.get(`/:customerXRefID/categories`, getCategories)
 
-router.get(`/users`, getEntityUsers)
+router.get(`/:customerXRefID/users`, getEntityUsers)
 
-router.get(`/departments`, getEntityDepartments)
+router.get(`/:customerXRefID/departments`, getEntityDepartments)
 
-router.get(`/locations`, getEntityLocations)
+router.get(`/:customerXRefID/locations`, getEntityLocations)
 
-router.get(`/accounts`, getEntityAccounts)
+router.get(`/:customerXRefID/accounts`, getEntityAccounts)
 
-router.get(`/customers`, getEntityCustomers)
+router.get(`/:customerXRefID/customers`, getEntityCustomers)
 
-router.get(`/syncIntegrationData`, syncIntegrationData)
+router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 
 export default router

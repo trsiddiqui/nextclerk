@@ -1,10 +1,8 @@
-
 import { AccountsManager } from '../models'
 import { Account } from '../types'
 import EntityService from './entities.service'
 
 export default class AccountService {
-
   #accountsManager: AccountsManager
 
   #entityService: EntityService
@@ -15,7 +13,6 @@ export default class AccountService {
   }: {
     accountsManager: AccountsManager
     entityService: EntityService
-
   }) {
     this.#accountsManager = accountsManager
     this.#entityService = entityService
@@ -30,8 +27,7 @@ export default class AccountService {
       identifiers,
     })
 
-    const inputLength =
-      'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
+    const inputLength = 'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
     if (returnedAccounts.length !== inputLength) {
       throw new Error('One or more of the reference Categories could not be found')
@@ -39,22 +35,16 @@ export default class AccountService {
     return new Map(returnedAccounts.map((obj) => [obj.uuid, obj]))
   }
 
-  public async getAccounts({
-    AccountXRefID
-  }: {
-    AccountXRefID: string
-  }): Promise<Account[]> {
-
+  public async getAccounts({ AccountXRefID }: { AccountXRefID: string }): Promise<Account[]> {
     const entity = await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [AccountXRefID] },
     })
 
-    const Accounts = await this.#accountsManager.getAllAccountss({
+    const accounts = await this.#accountsManager.getAllAccounts({
       entityID: entity.get(AccountXRefID).id,
-      txn: null
+      txn: null,
     })
 
-    return Accounts
+    return accounts
   }
-
 }

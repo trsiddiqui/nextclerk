@@ -12,13 +12,19 @@ const router = Router()
 
 // http://localhost:3000/customerXRefID/supporting-packages/123/lineItems/sheet
 
-router.get(`/:supportingPackageXRefID/lineItems/sheet`, getLineItemSheetContent)
+router.get(
+  `/:customerXRefID/supporting-packages/:supportingPackageXRefID/lineItems/sheet`,
+  getLineItemSheetContent
+)
 
-router.get(`/lineItems/actions/createSheet`, createLineItemsSheet)
+router.get(
+  `/:customerXRefID/supporting-packages/lineItems/actions/createSheet`,
+  createLineItemsSheet
+)
 
-router.post(`/`, createSupportingPackage)
-router.put(`/:supportingPackageUUID`, updateSupportingPackage)
-router.get(`/:supportingPackageUUID`, getSupportingPackage)
+router.post(`/:customerXRefID/supporting-packages/`, createSupportingPackage)
+router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, updateSupportingPackage)
+router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, getSupportingPackage)
 
 // this.router.use(
 //   ...openApiValidatorMiddlewares({

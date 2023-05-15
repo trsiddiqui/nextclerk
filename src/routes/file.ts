@@ -9,9 +9,9 @@ const router = Router()
 router.post(
   '/actions/upload-file',
   middlewareFileHandler({
-    allowedExtensions: ['.jpg', '.jpeg', '.png'],
+    allowedExtensions: ['.xlsx', '.jpg', '.jpeg', '.png', '.pdf', '.docx'],
     maxFileSize: 5 * 1024 * 1024, // 5Mb
-    formDataKey: 'image',
+    formDataKey: 'file',
     storage: {
       destination: multerStorageDestinations.MEMORY,
     },

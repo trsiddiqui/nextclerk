@@ -50,7 +50,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigIncrements('id').notNullable().primary()
     table.string('uuid').notNullable()
     table.text('name').notNullable()
-    table.string('mimeType', 50).nullable()
+    table.text('mimeType').nullable()
     table.text('location').notNullable()
     table.text('remoteReferenceUuid').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
