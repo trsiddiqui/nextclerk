@@ -33,17 +33,23 @@ export default class UsersManager {
     return query
   }
 
-  public async getUsersByEntityIds({
+  public async getUsersByEntityIdsAndKeyword({
     txn,
-    ids,
+    entityID,
+    search,
   }: {
     txn?: Knex.Transaction
-    ids: string[]
+    entityID: string
+    search: string
   }): Promise<User[]> {
-    let query = this.#knex.withSchema('public')
+    let query = this.#knex
+      .withSchema('public')
       .table('users')
       .select<User[]>('*')
-      .whereIn('id', ids)
+      .where('entityID', entityID)
+      .andWhereRaw(
+        `CONCAT(LOWER("firstName"), ' ', LOWER("lastName")) like '%${search.toLowerCase()}%'`
+      )
 
     if (txn) {
       query = query.transacting(txn)
@@ -51,5 +57,4 @@ export default class UsersManager {
 
     return query
   }
-
 }

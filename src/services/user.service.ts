@@ -1,10 +1,8 @@
-
 import { CategoriesManager, UserManager } from '../models'
-import { User } from '../types'
+import { SupportingPackageUserResponse, User, UserResponse } from '../types'
 import EntityService from './entities.service'
 
 export default class UserService {
-
   #userManager: UserManager
 
   #entityService: EntityService
@@ -15,7 +13,6 @@ export default class UserService {
   }: {
     userManager: UserManager
     entityService: EntityService
-
   }) {
     this.#userManager = userManager
     this.#entityService = entityService
@@ -42,8 +39,7 @@ export default class UserService {
       identifiers,
     })
 
-    const inputLength =
-      'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
+    const inputLength = 'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
     if (returnedUsers.length !== inputLength) {
       throw new Error('One or more of the reference Users could not be found.')
@@ -53,19 +49,25 @@ export default class UserService {
 
   public async getEntitiesUsers({
     customerXRefID,
+    search,
   }: {
     customerXRefID: string
-  }): Promise<User[]> {
-    const users = await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [customerXRefID] }
+    search: string
+  }): Promise<UserResponse[]> {
+    const entities = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
     })
 
-    const entityUsers = await this.#userManager.getUsersByEntityIds({
-      ids: [users.get(customerXRefID).id.toString()],
+    const entityUsers = await this.#userManager.getUsersByEntityIdsAndKeyword({
+      entityID: entities.get(customerXRefID).id,
+      search,
     })
 
-    return entityUsers
-
+    return entityUsers.map((eu) => ({
+      firstName: eu.firstName,
+      lastName: eu.lastName,
+      uuid: eu.uuid,
+      email: eu.email,
+    }))
   }
-
 }

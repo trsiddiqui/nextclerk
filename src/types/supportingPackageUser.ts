@@ -1,8 +1,8 @@
-import { EntityDateWithDelete } from "."
+import { EntityDateWithDelete } from '.'
 
 export enum SupportingPackageUserType {
   PARTICIPANT = 'PARTICIPANT',
-  APPROVER = 'APPROVER'
+  APPROVER = 'APPROVER',
 }
 
 export interface SupportingPackageUser extends EntityDateWithDelete {
@@ -15,8 +15,8 @@ export interface SupportingPackageUser extends EntityDateWithDelete {
 export interface SupportingPackageUserResponse {
   uuid: string
   type: SupportingPackageUserType
-  name: string
-  family: string
+  firstName: string
+  lastName: string
 }
 
 export interface SupportingPackageUserRequest {
@@ -24,4 +24,7 @@ export interface SupportingPackageUserRequest {
   type: SupportingPackageUserType
 }
 
-export type ApplicableSupportingPackagesUsersResponse = Record<string, SupportingPackageUserResponse[]>
+export type ApplicableSupportingPackagesUsersResponse = Record<
+  string,
+  SupportingPackageUserResponse[]
+>

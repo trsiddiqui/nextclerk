@@ -1,4 +1,4 @@
-import { EntityDate } from "./common"
+import { EntityDate } from './common'
 
 export interface SupportingPackageCommunicationResponse extends EntityDate {
   uuid: string
@@ -6,14 +6,14 @@ export interface SupportingPackageCommunicationResponse extends EntityDate {
   text: string
   cellLink: string
   isCellLinkValid: boolean
-  attachmentUUID: string,
+  attachmentUUID: string
   replyToCommunicationUUID: string
   isChangeRequest: boolean
   users: SupportingPackageCommunicationUserResponse[]
 }
 
 export interface SupportingPackageCommunicationUserResponse {
-  uuid: string,
-  name: string,
-  family: string
+  uuid: string
+  firstName: string
+  lastName: string
 }

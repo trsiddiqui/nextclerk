@@ -2,7 +2,8 @@ import App from '../src/app'
 import validateEnv from '../src/utils/validateEnv'
 import Redis from 'ioredis'
 import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from './config'
-import { promisify } from 'util'
+
+console.log('here')
 
 validateEnv()
 

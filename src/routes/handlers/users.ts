@@ -8,8 +8,10 @@ export const getEntityUsers = async (
 ): Promise<void> => {
   try {
     const { customerXRefID } = req.params
+    const { search } = req.query as { search: string }
     const entityUsers = await $UserService.getEntitiesUsers({
-      customerXRefID
+      customerXRefID,
+      search,
     })
 
     res.status(200).json(entityUsers)
@@ -17,5 +19,3 @@ export const getEntityUsers = async (
     next(error)
   }
 }
-
-

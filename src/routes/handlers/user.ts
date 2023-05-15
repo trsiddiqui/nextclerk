@@ -14,8 +14,10 @@ class UsersHandler {
   ): Promise<void> => {
     try {
       const { customerXRefID } = req.params
+      const { search } = req.query as { search: string }
       const entityUsers = await $UserService.getEntitiesUsers({
         customerXRefID,
+        search,
       })
 
       res.status(200).json(entityUsers)

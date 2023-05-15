@@ -69,8 +69,8 @@ export default class SupportingPackageUserService {
 
         const users = relationshipsMapped[supportingPackageId].map((sp) => ({
           type: sp.type,
-          name: usersEntity.find((user) => user.id === sp.userID).name,
-          family: usersEntity.find((user) => user.id === sp.userID).family,
+          firstName: usersEntity.find((user) => user.id === sp.userID).firstName,
+          lastName: usersEntity.find((user) => user.id === sp.userID).lastName,
           uuid: usersEntity.find((user) => user.id === sp.userID).uuid,
         }))
 
