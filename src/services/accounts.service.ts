@@ -35,13 +35,13 @@ export default class AccountService {
     return new Map(returnedAccounts.map((obj) => [obj.uuid, obj]))
   }
 
-  public async getAccounts({ AccountXRefID }: { AccountXRefID: string }): Promise<Account[]> {
+  public async getAccounts({ customerXRefID }: { customerXRefID: string }): Promise<Account[]> {
     const entity = await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [AccountXRefID] },
+      identifiers: { uuids: [customerXRefID] },
     })
 
     const accounts = await this.#accountsManager.getAllAccounts({
-      entityID: entity.get(AccountXRefID).id,
+      entityID: entity.get(customerXRefID).id,
       txn: null,
     })
 

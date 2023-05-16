@@ -29,6 +29,7 @@ export class Uploader {
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
     })
 
+    // TODO: Also store this file in db with entityID
     // Initialize bucket
     // await initBucket(s3, BUCKET_NAME)
 
