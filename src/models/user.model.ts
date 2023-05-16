@@ -40,16 +40,19 @@ export default class UsersManager {
   }: {
     txn?: Knex.Transaction
     entityID: string
-    search: string
+    search?: string
   }): Promise<User[]> {
     let query = this.#knex
       .withSchema('public')
       .table('users')
       .select<User[]>('*')
       .where('entityID', entityID)
-      .andWhereRaw(
+
+    if (search) {
+      query = query.andWhereRaw(
         `CONCAT(LOWER("firstName"), ' ', LOWER("lastName")) like '%${search.toLowerCase()}%'`
       )
+    }
 
     if (txn) {
       query = query.transacting(txn)

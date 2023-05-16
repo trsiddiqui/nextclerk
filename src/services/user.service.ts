@@ -52,7 +52,7 @@ export default class UserService {
     search,
   }: {
     customerXRefID: string
-    search: string
+    search?: string
   }): Promise<UserResponse[]> {
     const entities = await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [customerXRefID] },

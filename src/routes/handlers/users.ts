@@ -8,7 +8,7 @@ export const getEntityUsers = async (
 ): Promise<void> => {
   try {
     const { customerXRefID } = req.params
-    const { search } = req.query as { search: string }
+    const { search } = req.query as { search?: string }
     const entityUsers = await $UserService.getEntitiesUsers({
       customerXRefID,
       search,
