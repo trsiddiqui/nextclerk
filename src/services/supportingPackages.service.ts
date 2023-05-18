@@ -21,6 +21,7 @@ import { Category, Label } from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
+import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -39,6 +40,8 @@ export default class SupportingPackageService {
 
   #supportingPackageAttachmentService: SupportingPackageAttachmentService
 
+  #supportingPackageCommunicationService: SupportingPackageCommunicationService
+
   constructor({
     supportingPackagesManager,
     categoryService,
@@ -48,6 +51,7 @@ export default class SupportingPackageService {
     fileService,
     supportingPackagesUsersService,
     supportingPackageAttachmentService,
+    supportingPackageCommunicationService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
@@ -57,6 +61,7 @@ export default class SupportingPackageService {
     fileService: FileService
     supportingPackagesUsersService: SupportingPackageUserService
     supportingPackageAttachmentService: SupportingPackageAttachmentService
+    supportingPackageCommunicationService: SupportingPackageCommunicationService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
@@ -66,6 +71,7 @@ export default class SupportingPackageService {
     this.#fileService = fileService
     this.#supportingPackagesUsersService = supportingPackagesUsersService
     this.#supportingPackageAttachmentService = supportingPackageAttachmentService
+    this.#supportingPackageCommunicationService = supportingPackageCommunicationService
   }
 
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -280,7 +286,8 @@ export default class SupportingPackageService {
       isDraft,
       date,
       users,
-      files
+      files,
+      communications
     } = supportingPackageRequest
 
     const [label, category, usersRequest, attachment] = await Promise.all([
@@ -326,6 +333,7 @@ export default class SupportingPackageService {
       userXRefID,
     })
 
+    // add sp users
     await this.#supportingPackagesUsersService.insertSupportingPackageAndUserRelationships({
       relationships: users.map((user) => ({
         supportingPackageID: createdSP.id.toString(),
@@ -344,6 +352,21 @@ export default class SupportingPackageService {
         mimeType:  attachment.get(file.uuid).mimeType,
         isMaster: file.isMaster ?? false,
       })),
+      userXRefID
+    })
+
+    await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships({
+      relationships: communications.map((communication) => ({
+        text: communication.text,
+        cellLink: communication.cellLink,
+        isCellLinkValid: communication.isCellLinkValid,
+        replyToCommunicationId: communication.replyToCommunicationId,
+        isChangeRequest: communication.isChangeRequest,
+        supportingPackageID: createdSP.id,
+        attachments: communication.attachments,
+        users: communication.users
+      })),
+      supportingPackageId: createdSP.id,
       userXRefID
     })
 
@@ -507,6 +530,10 @@ export default class SupportingPackageService {
       id: id.toString()
     })
 
+    const communications = await this.#supportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageId({
+      id
+    })
+
     return {
       uuid,
       number,
@@ -527,6 +554,7 @@ export default class SupportingPackageService {
       createdBy,
       updatedAt,
       updatedBy,
+      communications,
     }
   }
 

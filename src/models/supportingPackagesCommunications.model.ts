@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 import { DateTime } from 'luxon'
-import { SupportingPackage, SupportingPackageUser } from '../types'
+import { SupportingPackage, SupportingPackageCommunication, SupportingPackageCommunicationRequest, SupportingPackageCommunicationResponse, SupportingPackageUser } from '../types'
 import RelationsManager from './relations.model'
 
 export default class SupportingPackagesCommunicationsManager extends RelationsManager {
@@ -11,25 +11,25 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
     this.#knex = knex
   }
 
-  public async getSupportingPackageCommuinications({
+  public async getSupportingPackageCommunicationsBySupportingPackageID({
     txn,
     id,
   }: {
     txn?: Knex.Transaction
-    id: string
-  }): Promise<SupportingPackageUser[]> {
+    id: number
+  }): Promise<SupportingPackageCommunication[]> {
     let query = this.#knex
       .withSchema('public')
-      .table('supporting_packages_users')
-      .select<SupportingPackageUser[]>('*')
-      .where('id', id)
+      .table('supporting_packages_communications')
+      .select<SupportingPackageCommunication[]>('*')
+      .where('supportingPackageID', id)
 
     if (txn) {
       query = query.transacting(txn)
     }
 
-    const getSupportingPackageCommuinications = await query
-    return getSupportingPackageCommuinications
+    const getSupportingPackageCommunications = await query
+    return getSupportingPackageCommunications
   }
 
   public async insertSupportingPackageUsersRelation({
@@ -55,23 +55,29 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
     return relationships
   }
 
-  public async upsertSupportingPackageAndUserRelationship({
-    supportingPackageAndUserRelationship,
+  public async upsertSupportingPackageAndCommunicationRelationship({
+    supportingPackageAndCommunicationRelationship,
     userXRefID,
-  }: {
-    supportingPackageAndUserRelationship: Partial<SupportingPackageUser>
-    userXRefID: string
-  }): Promise<SupportingPackageUser> {
-    const relation = await super.upsertRelations<
-      SupportingPackageUser,
-      SupportingPackageUser
-    >({
-      relationEntity: supportingPackageAndUserRelationship,
-      tableName: 'supporting_packages_users',
-      keys: ['supportingPackageID', 'userID', 'type'],
-      userXRefID,
-    })
 
-    return relation
+  }: {
+    supportingPackageAndCommunicationRelationship: Partial<SupportingPackageCommunicationRequest>
+    userXRefID: string
+  }): Promise<SupportingPackageCommunication> {
+    let query = this.#knex
+      .withSchema('public')
+      .table('supporting_packages_communications')
+      .insert(
+        { ...supportingPackageAndCommunicationRelationship,
+          createdAt: DateTime.utc(),
+          createdBy: userXRefID,
+          updatedAt: DateTime.utc(),
+          updatedBy: userXRefID,
+        })
+      .onConflict(['uuid'])
+      .merge()
+      .returning('*')
+
+    const resp = await query
+    return resp[0]
   }
 }

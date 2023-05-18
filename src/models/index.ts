@@ -12,6 +12,9 @@ import LocationsManager from './location.model'
 import CustomerAuthDetailsManager from './customerAuthDetails'
 import FilesManager from './files'
 import SupportingPackagesAttachmentsManager from './supportingPackagesAttachments.model'
+import SupportingPackagesCommunicationsManager from './supportingPackagesCommunications.model'
+import SupportingPackagesCommunicationsAttachmentsManager from './supportingPackagescommunicationsAttachments.model'
+import SupportingPackagesCommunicationsUsersManager from './supportingPackagescommunicationsUsers.model'
 
 const $LabelsManager = new LabelsManager(Knex)
 
@@ -38,6 +41,12 @@ const $UserManager = new UserManager(Knex)
 const $FilesManager = new FilesManager(Knex)
 
 const $SupportingPackagesAttachmentsManager = new SupportingPackagesAttachmentsManager(Knex)
+
+const $SupportingPackagesCommunicationsAttachmentsManager = new SupportingPackagesCommunicationsAttachmentsManager(Knex)
+
+const $SupportingPackagesCommunicationsUsersManager = new SupportingPackagesCommunicationsUsersManager(Knex)
+
+const $SupportingPackagesCommunicationsManager = new SupportingPackagesCommunicationsManager(Knex)
 
 
 export {
@@ -66,5 +75,12 @@ export {
   FilesManager,
   $FilesManager,
   SupportingPackagesAttachmentsManager,
-  $SupportingPackagesAttachmentsManager
+  $SupportingPackagesAttachmentsManager,
+  SupportingPackagesCommunicationsManager,
+  $SupportingPackagesCommunicationsManager,
+  $SupportingPackagesCommunicationsAttachmentsManager,
+  SupportingPackagesCommunicationsAttachmentsManager,
+  $SupportingPackagesCommunicationsUsersManager,
+  SupportingPackagesCommunicationsUsersManager
+
 }

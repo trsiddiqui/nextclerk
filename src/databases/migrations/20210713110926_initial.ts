@@ -120,7 +120,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text('text').notNullable()
     table
       .bigInteger('replyToCommunicationId')
-      .notNullable()
       .references('id')
       .inTable('public.supporting_packages_communications')
     table.boolean('isChangeRequest').defaultTo(false)
@@ -141,9 +140,6 @@ export async function up(knex: Knex): Promise<void> {
       .references('id')
       .inTable('public.supporting_packages_communications')
     table.bigInteger('fileID').notNullable().references('id').inTable('public.files')
-    table.string('name')
-    table.string('mimeType')
-    table.integer('size')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('deleteAt')

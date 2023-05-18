@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { Knex } from 'knex'
 import { $CategoryService, $SupportingPackageService } from '../../services'
+import { SupportingPackageRequest } from '@/types'
 
 export const createLineItemsSheet = async (
   req: Request,
@@ -112,7 +113,7 @@ export const createSupportingPackage = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const supportingPackageRequest = req.body
+    const supportingPackageRequest: SupportingPackageRequest = req.body
     const { customerXRefID } = req.params
     const userXRefID = 'testUser'
 
