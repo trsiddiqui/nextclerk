@@ -15,7 +15,9 @@ import errorMiddleware from '../src/routes/middlewares/error'
 import { logger, stream } from '../src/utils/logger'
 import { openApiValidatorMiddlewares } from './routes/middlewares/validation'
 import supportingPackageRoutes from './routes/supportingPackage'
-import thirdParthAuthRoutes from './routes/thirdPartyAuth'
+import fileRoutes from './routes/file'
+import thirdPartyAuthRoutes from './routes/thirdPartyAuth'
+import genericRoutes from './routes/shared'
 
 class App {
   public app: express.Application
@@ -23,6 +25,7 @@ class App {
   public port: string | number
 
   constructor() {
+    console.log('here')
     this.app = express()
     this.env = NODE_ENV || 'development'
     this.port = PORT || 3000
@@ -72,7 +75,9 @@ class App {
 
   private initializeRoutes() {
     this.app.use('/api', supportingPackageRoutes)
-    this.app.use('/third-party-auth', thirdParthAuthRoutes)
+    this.app.use('/api', genericRoutes)
+    this.app.use('/api/global', fileRoutes)
+    this.app.use('/third-party-auth', thirdPartyAuthRoutes)
     this.app.use(function errorHandler(err, req, res, next) {
       console.error(err)
       res.status(500)

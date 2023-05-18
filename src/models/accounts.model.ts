@@ -35,14 +35,18 @@ export default class AccountsManager extends RelationsManager {
     return query
   }
 
-  public async getAllAccountss({
+  public async getAllAccounts({
     entityID,
     txn,
   }: {
-    entityID: number
+    entityID: string
     txn?: Knex.Transaction
   }): Promise<Account[]> {
-    let query = this.#knex.withSchema('public').table('accounts').select<Account[]>('*').where({ entityID })
+    let query = this.#knex
+      .withSchema('public')
+      .table('accounts')
+      .select<Account[]>('*')
+      .where({ entityID })
 
     if (txn) {
       query = query.transacting(txn)
@@ -58,10 +62,7 @@ export default class AccountsManager extends RelationsManager {
     account: Partial<Account>
     userXRefID: string
   }): Promise<Account> {
-    const integrationEntity = await super.upsertRelations<
-      Account,
-      Account
-    >({
+    const integrationEntity = await super.upsertRelations<Account, Account>({
       relationEntity: account,
       tableName: 'accounts',
       keys: ['accountNumber', 'entityID', 'integrationID'],
@@ -70,5 +71,4 @@ export default class AccountsManager extends RelationsManager {
 
     return integrationEntity
   }
-
 }
