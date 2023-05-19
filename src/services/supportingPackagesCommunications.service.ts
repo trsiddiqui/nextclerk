@@ -105,8 +105,8 @@ export default class SupportingPackageCommunicationService {
       spcUsersResponse.forEach(spcur => {
         users.push({
           uuid: spcur.uuid,
-          name: spcur.name,
-          family: spcur.family
+          name: spcur.firstName,
+          family: spcur.lastName
         })
       })
 

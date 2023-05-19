@@ -19,8 +19,6 @@ export interface SupportingPackageCommunication extends EntityDateWithArchive {
   cellLink: string
   isCellLinkValid: boolean
   replyToCommunicationId: number
-  attachmentUUID: string
-  replyToCommunicationUUID: string
   isChangeRequest: boolean
 }
 
@@ -40,11 +38,6 @@ export interface SupportingPackageCommunicationUser extends EntityDateWithDelete
   id: number
   communicationID: number
   userID: number
-}
-export interface SupportingPackageCommunicationUserResponse {
-  uuid: string
-  firstName: string
-  lastName: string
 }
 
 export interface SupportingPackageCommunicationAttachment extends EntityDateWithDelete {
