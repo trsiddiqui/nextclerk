@@ -9,6 +9,32 @@ export default class SupportingPackagesCommunicationsAttachmentsManager {
     this.#knex = knex
   }
 
+  public async insertCommunicationAttachments({
+    txn,
+    communications,
+    userXRefID,
+  }: {
+    txn?: Knex.Transaction
+    communications: Partial<SupportingPackageCommunicationUser>[]
+    userXRefID: string
+  }): Promise<SupportingPackageCommunicationUser[]> {
+    const relations = await this.#knex
+      .withSchema('public')
+      .table('communications_attachments')
+      .insert(
+        communications.map((communication) => ({
+          ...communication,
+          createdAt: DateTime.utc(),
+          createdBy: userXRefID,
+          updatedAt: DateTime.utc(),
+          updatedBy: userXRefID,
+        }))
+      )
+      .returning<SupportingPackageCommunicationUser[]>('*')
+
+    return relations
+  }
+
   public async upsertCommunicationAttachments({
     txn,
     communication,

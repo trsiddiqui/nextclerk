@@ -4,6 +4,7 @@ import { v4 } from 'uuid'
 import path from 'path'
 import { BUCKET_NAME } from '@/config'
 import { $FilesManager } from '@/models'
+import { $EntityService } from './index'
 
 /**
  * @name uploadToS3
@@ -13,6 +14,7 @@ import { $FilesManager } from '@/models'
  */
 export const uploadToS3 = async (
   s3: S3,
+  customerXRefID: string,
   fileData?: Express.Multer.File
 ): Promise<{ success: boolean; message: string; data: object }> => {
   try {
@@ -22,6 +24,12 @@ export const uploadToS3 = async (
     const { originalname, mimetype } = fileData
     const uuid = v4()
     const uuidFile = `${uuid}${extension}`
+
+    const entity = await $EntityService.validateAndGetEntities({
+      identifiers: {
+        uuids: [customerXRefID]
+      }
+    })
 
     const params = {
       Bucket: BUCKET_NAME,
@@ -33,6 +41,7 @@ export const uploadToS3 = async (
       const res = await s3.upload(params).promise()
       const uploadedFile = {
         uuid,
+        entityID: entity.get(customerXRefID).id,
         name: originalname,
         mimeType: mimetype,
         location: res.Location,

@@ -39,7 +39,7 @@ export default class UsersManager {
     search,
   }: {
     txn?: Knex.Transaction
-    entityID: string
+    entityID: number
     search?: string
   }): Promise<User[]> {
     let query = this.#knex

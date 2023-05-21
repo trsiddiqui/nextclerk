@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { Knex } from 'knex'
-import { $CategoryService, $SupportingPackageService } from '../../services'
-import { SupportingPackageRequest } from '@/types'
+import { $CategoryService, $SupportingPackageCommunicationService, $SupportingPackageService } from '../../services'
+import { SupportingPackageCommunicationRequest, SupportingPackageRequest } from '@/types'
 
 export const createLineItemsSheet = async (
   req: Request,
@@ -166,6 +166,48 @@ export const getSupportingPackage = async (
     })
 
     res.status(200).json(supportingPackage)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const createSupportingPackageCommunication = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { customerXRefID, supportingPackageUUID } = req.params
+    const supportingPackageCommunication: SupportingPackageCommunicationRequest = req.body
+
+
+    const supportingPackageCommunicationResponse = await $SupportingPackageService.createSupportingPackageCommunication({
+      communication: supportingPackageCommunication,
+      customerXRefID,
+      supportingPackageUUID,
+      userXRefID: 'testUser'
+    })
+
+    res.status(200).json(supportingPackageCommunicationResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getSupportingPackageCommunicationByCommunicationUUID = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { supportingPackageUUID, communicationUUID } = req.params
+
+    const supportingPackageCommunicationResponse = await $SupportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageIdAndCommunicationUUID({
+      communicationUUIDs: [communicationUUID],
+      supportingPackageId: parseInt (supportingPackageUUID) // TODO: fix here for id instead of UUID
+    })
+
+    res.status(200).json(supportingPackageCommunicationResponse)
   } catch (error) {
     next(error)
   }

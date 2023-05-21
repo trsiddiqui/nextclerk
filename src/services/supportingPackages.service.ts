@@ -17,7 +17,7 @@ import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
 import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
-import { Category, Label } from '@/types'
+import { Category, Label, SupportingPackageCommunicationRequest, SupportingPackageCommunicationResponse } from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
@@ -72,6 +72,24 @@ export default class SupportingPackageService {
     this.#supportingPackagesUsersService = supportingPackagesUsersService
     this.#supportingPackageAttachmentService = supportingPackageAttachmentService
     this.#supportingPackageCommunicationService = supportingPackageCommunicationService
+  }
+
+  public async validateAndGetSupportingPackages({
+    identifiers,
+  }: {
+    identifiers: { uuids: string[] } | { ids: string[] }
+  }): Promise<Map<string, SupportingPackage>> {
+    const returnedSupportingPackages = await this.#supportingPackagesManager.getSupportingByIdentifiers({
+      identifiers,
+    })
+
+    const inputLength =
+      'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
+
+    if (returnedSupportingPackages.length !== inputLength) {
+      throw new Error('One or more of the reference Supporting packages could not be found')
+    }
+    return new Map(returnedSupportingPackages.map((obj) => [obj.uuid, obj]))
   }
 
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -360,7 +378,7 @@ export default class SupportingPackageService {
         text: communication.text,
         cellLink: communication.cellLink,
         isCellLinkValid: communication.isCellLinkValid,
-        replyToCommunicationId: communication.replyToCommunicationId,
+        replyToCommunicationUUID: communication.replyToCommunicationUUID,
         isChangeRequest: communication.isChangeRequest,
         supportingPackageID: createdSP.id,
         attachments: communication.attachments,
@@ -374,6 +392,56 @@ export default class SupportingPackageService {
       customerXRefID,
       supportingPackageUUID: createdSP.uuid,
     })
+  }
+
+  public async createSupportingPackageCommunication({
+    customerXRefID,
+    supportingPackageUUID,
+    communication,
+    userXRefID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+    communication: SupportingPackageCommunicationRequest
+    userXRefID: string
+  }): Promise<SupportingPackageCommunicationResponse> {
+    await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+    const {
+      text,
+      cellLink,
+      isCellLinkValid,
+      replyToCommunicationUUID,
+      isChangeRequest,
+      attachments,
+      users,
+    } = communication
+
+    const [supportingPackage] = await Promise.all([
+      this.validateAndGetSupportingPackages({
+        identifiers: {
+          uuids: [supportingPackageUUID],
+        },
+      }),
+    ])
+
+    const createdCommunication = await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships({
+      relationships: [{
+        text,
+        cellLink,
+        isCellLinkValid,
+        replyToCommunicationUUID :replyToCommunicationUUID ?? null ,
+        isChangeRequest,
+        attachments,
+        users,
+      }],
+      supportingPackageId: supportingPackage.get(supportingPackageUUID).id,
+      userXRefID
+    })
+
+    return createdCommunication[0]
   }
 
   public async updateSupportingPackage({

@@ -22,14 +22,16 @@ export interface SupportingPackageCommunication extends EntityDateWithArchive {
   isChangeRequest: boolean
 }
 
-export type SupportingPackageCommunicationRequest = Omit<SupportingPackageCommunication, 'id' | 'uuid' | 'supportingPackageID'> &
+export type SupportingPackageCommunicationRequest = Omit<SupportingPackageCommunication, 'id' | 'uuid' | 'supportingPackageID' | 'replyToCommunicationId'> &
 {
+  replyToCommunicationUUID: string | null
   attachments: string[]
   users: string[]
 }
 
-export type SupportingPackageCommunicationResponse = Omit<SupportingPackageCommunication, 'id' | 'supportingPackageID'> &
+export type SupportingPackageCommunicationResponse = Omit<SupportingPackageCommunication, 'id' | 'supportingPackageID' | 'replyToCommunicationId'> &
 {
+  replyToCommunicationUUID: string
   attachments: SupportingPackageCommunicationAttachmentResponse[]
   users: SupportingPackageCommunicationUserResponse[]
 }

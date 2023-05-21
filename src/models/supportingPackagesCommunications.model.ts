@@ -32,6 +32,30 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
     return getSupportingPackageCommunications
   }
 
+  public async getSupportingPackageCommunicationsBySupportingPackageIDAndCommunicationUUID({
+    txn,
+    id,
+    uuids,
+  }: {
+    txn?: Knex.Transaction
+    id: number
+    uuids: string[]
+  }): Promise<SupportingPackageCommunication[]> {
+    let query = this.#knex
+      .withSchema('public')
+      .table('supporting_packages_communications')
+      .select<SupportingPackageCommunication[]>('*')
+      .whereIn('uuid', uuids)
+      .andWhere('supportingPackageID', id)
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+
+    const getSupportingPackageCommunications = await query
+    return getSupportingPackageCommunications
+  }
+
   public async insertSupportingPackageUsersRelation({
     supportingPackageUsersRelationships,
     userXRefID,
@@ -57,10 +81,12 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
 
   public async upsertSupportingPackageAndCommunicationRelationship({
     supportingPackageAndCommunicationRelationship,
+    supportingPackageID,
     userXRefID,
 
   }: {
-    supportingPackageAndCommunicationRelationship: Partial<SupportingPackageCommunicationRequest>
+    supportingPackageAndCommunicationRelationship: Partial<SupportingPackageCommunication>
+    supportingPackageID: number
     userXRefID: string
   }): Promise<SupportingPackageCommunication> {
     let query = this.#knex
@@ -68,6 +94,7 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
       .table('supporting_packages_communications')
       .insert(
         { ...supportingPackageAndCommunicationRelationship,
+          supportingPackageID,
           createdAt: DateTime.utc(),
           createdBy: userXRefID,
           updatedAt: DateTime.utc(),
@@ -79,5 +106,27 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
 
     const resp = await query
     return resp[0]
+  }
+  public async getSupportingPackageCommunicationsByIdentifiers({
+    txn,
+    identifiers,
+  }: {
+    txn?: Knex.Transaction
+    identifiers: { uuids: string[] } | { ids: string[] }
+  }): Promise<SupportingPackageCommunication[]> {
+    let query = this.#knex.withSchema('public').table('supporting_packages_communications').select<SupportingPackageCommunication[]>('*')
+
+    if ('uuids' in identifiers) {
+      query = query.whereIn('uuid', identifiers.uuids)
+    }
+
+    if ('ids' in identifiers) {
+      query = query.whereIn('id', identifiers.ids)
+    }
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+    return query
   }
 }

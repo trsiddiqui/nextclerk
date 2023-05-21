@@ -49,6 +49,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('files', (table) => {
     table.bigIncrements('id').notNullable().primary()
     table.string('uuid').notNullable()
+    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
     table.text('name').notNullable()
     table.text('mimeType').nullable()
     table.text('location').notNullable()

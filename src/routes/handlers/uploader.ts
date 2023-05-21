@@ -24,6 +24,7 @@ export type UploadedFileProps = {
 
 export class Uploader {
   static Upload = async (req: Request, res: any) => {
+    const { customerXRefID } = req.params
     const s3 = new S3({
       accessKeyId: AWS_ACCESS_KEY_ID,
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -36,7 +37,7 @@ export class Uploader {
     // get file data through req.file thank to multer
     console.log('file object', req.file)
 
-    const uploadRes = await uploadToS3(s3, req.file)
+    const uploadRes = await uploadToS3(s3, customerXRefID, req.file)
 
     const uploadedFile = {
       mimetype: req.file.mimetype,

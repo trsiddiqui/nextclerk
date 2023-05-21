@@ -41,9 +41,9 @@ export default class UserService {
 
     const inputLength = 'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
-    if (returnedUsers.length !== inputLength) {
-      throw new Error('One or more of the reference Users could not be found.')
-    }
+    // if (returnedUsers.length !== inputLength) {
+    //   throw new Error('One or more of the reference Users could not be found.')
+    // }
     return new Map(returnedUsers.map((obj) => [obj.uuid, obj]))
   }
 
