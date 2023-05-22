@@ -124,6 +124,7 @@ export async function up(knex: Knex): Promise<void> {
       .references('id')
       .inTable('public.supporting_packages_communications')
     table.boolean('isChangeRequest').defaultTo(false)
+    table.string('status',15).nullable,
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')

@@ -20,6 +20,12 @@ export interface SupportingPackageCommunication extends EntityDateWithArchive {
   isCellLinkValid: boolean
   replyToCommunicationId: number
   isChangeRequest: boolean
+  status: CommunicationStatus
+}
+
+export enum CommunicationStatus {
+  COMPLETED = 'COMPLETED',
+  UNCOMPLETED = 'UNCOMPLETED'
 }
 
 export type SupportingPackageCommunicationRequest = Omit<SupportingPackageCommunication, 'id' | 'uuid' | 'supportingPackageID' | 'replyToCommunicationId'> &

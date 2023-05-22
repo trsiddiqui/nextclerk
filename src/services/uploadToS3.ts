@@ -50,9 +50,14 @@ export const uploadToS3 = async (
         file: uploadedFile,
       })
 
+      delete uploadedFile.entityID
+
       console.log('File Uploaded with Successful', res.Location)
 
-      return { success: true, message: 'File Uploaded with Successful', data: uploadedFile }
+      return { success: true, message: 'File Uploaded with Successful', data: {
+        ...uploadedFile,
+        customerXRefID
+      } }
     } catch (error) {
       return { success: false, message: 'Unable to Upload the file', data: error }
     }

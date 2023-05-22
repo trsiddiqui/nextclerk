@@ -43,6 +43,7 @@ export class Uploader {
       mimetype: req.file.mimetype,
       originalname: req.file.originalname,
       size: req.file.size,
+      uploaded: uploadRes.data
     }
 
     if (uploadRes.success) {
