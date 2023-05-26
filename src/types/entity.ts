@@ -1,7 +1,7 @@
 import { EntityDateWithArchive } from '../types'
 
 export interface Entity extends EntityDateWithArchive {
-  id: string
+  id: number
   uuid: string
   name: string
   isPrimary: boolean

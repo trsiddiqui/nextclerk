@@ -7,7 +7,7 @@ const router = Router()
 // Uploads an image
 // OBS.: Needs to go BEFORE openApiValidatorMiddlewares
 router.post(
-  '/actions/upload-file',
+  '/:customerXRefID/actions/upload-file',
   middlewareFileHandler({
     allowedExtensions: ['.xlsx', '.jpg', '.jpeg', '.png', '.pdf', '.docx'],
     maxFileSize: 5 * 1024 * 1024, // 5Mb

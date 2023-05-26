@@ -32,7 +32,7 @@ export default class SupportingPackageUserService {
     ids: string[]
   }): Promise<ApplicableSupportingPackagesUsersResponse> {
     const supportingPackagesUsersRecords =
-      await this.#supportingPackagesUsersManager.getAllUsersSupportingPackageBySupportingPackageIDs(
+      await this.#supportingPackagesUsersManager.getAllUsersSupportingPackageUsersBySupportingPackageIDs(
         {
           ids,
         }
@@ -46,7 +46,7 @@ export default class SupportingPackageUserService {
       return {
         ...result,
         [key]:
-          result[key] !== undefined && current.deletedAt !== null
+          result[key] !== undefined && current.deletedAt === null
             ? result[key].concat(current)
             : [current],
       }
@@ -73,7 +73,6 @@ export default class SupportingPackageUserService {
           lastName: usersEntity.find((user) => user.id === sp.userID).lastName,
           uuid: usersEntity.find((user) => user.id === sp.userID).uuid,
         }))
-
         results[supportingPackageId] = users
       }
     }

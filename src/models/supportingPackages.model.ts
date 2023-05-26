@@ -105,4 +105,28 @@ export default class SupportingPackagesManager {
     const [supportingPackageResponse] = await query.returning<SupportingPackage[]>('*')
     return supportingPackageResponse
   }
+
+  public async getSupportingByIdentifiers({
+    txn,
+    identifiers,
+  }: {
+    txn?: Knex.Transaction
+    identifiers: { uuids: string[] } | { ids: string[] }
+  }): Promise<SupportingPackage[]> {
+    let query = this.#knex.withSchema('public').table('supporting_packages').select<SupportingPackage[]>('*')
+
+    if ('uuids' in identifiers) {
+      query = query.whereIn('uuid', identifiers.uuids)
+    }
+
+    if ('ids' in identifiers) {
+      query = query.whereIn('id', identifiers.ids)
+    }
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+
+    return query
+  }
 }

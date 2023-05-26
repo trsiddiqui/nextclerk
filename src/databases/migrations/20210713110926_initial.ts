@@ -49,6 +49,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('files', (table) => {
     table.bigIncrements('id').notNullable().primary()
     table.string('uuid').notNullable()
+    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
     table.text('name').notNullable()
     table.text('mimeType').nullable()
     table.text('location').notNullable()
@@ -120,10 +121,10 @@ export async function up(knex: Knex): Promise<void> {
     table.text('text').notNullable()
     table
       .bigInteger('replyToCommunicationId')
-      .notNullable()
       .references('id')
       .inTable('public.supporting_packages_communications')
     table.boolean('isChangeRequest').defaultTo(false)
+    table.string('status',15).nullable,
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')
@@ -141,9 +142,6 @@ export async function up(knex: Knex): Promise<void> {
       .references('id')
       .inTable('public.supporting_packages_communications')
     table.bigInteger('fileID').notNullable().references('id').inTable('public.files')
-    table.string('name')
-    table.string('mimeType')
-    table.integer('size')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('deleteAt')

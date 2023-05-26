@@ -11,7 +11,7 @@ export default class SupportingPackagesUsersManager extends RelationsManager {
     this.#knex = knex
   }
 
-  public async getAllUsersSupportingPackageBySupportingPackageIDs({
+  public async getAllUsersSupportingPackageUsersBySupportingPackageIDs({
     txn,
     ids,
   }: {

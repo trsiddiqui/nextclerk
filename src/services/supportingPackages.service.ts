@@ -17,10 +17,11 @@ import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
 import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
-import { Category, Label } from '@/types'
+import { Category, Label, SupportingPackageCommunicationRequest, SupportingPackageCommunicationResponse } from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
+import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -39,6 +40,8 @@ export default class SupportingPackageService {
 
   #supportingPackageAttachmentService: SupportingPackageAttachmentService
 
+  #supportingPackageCommunicationService: SupportingPackageCommunicationService
+
   constructor({
     supportingPackagesManager,
     categoryService,
@@ -48,6 +51,7 @@ export default class SupportingPackageService {
     fileService,
     supportingPackagesUsersService,
     supportingPackageAttachmentService,
+    supportingPackageCommunicationService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
@@ -57,6 +61,7 @@ export default class SupportingPackageService {
     fileService: FileService
     supportingPackagesUsersService: SupportingPackageUserService
     supportingPackageAttachmentService: SupportingPackageAttachmentService
+    supportingPackageCommunicationService: SupportingPackageCommunicationService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
@@ -66,6 +71,25 @@ export default class SupportingPackageService {
     this.#fileService = fileService
     this.#supportingPackagesUsersService = supportingPackagesUsersService
     this.#supportingPackageAttachmentService = supportingPackageAttachmentService
+    this.#supportingPackageCommunicationService = supportingPackageCommunicationService
+  }
+
+  public async validateAndGetSupportingPackages({
+    identifiers,
+  }: {
+    identifiers: { uuids: string[] } | { ids: string[] }
+  }): Promise<Map<string, SupportingPackage>> {
+    const returnedSupportingPackages = await this.#supportingPackagesManager.getSupportingByIdentifiers({
+      identifiers,
+    })
+
+    const inputLength =
+      'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
+
+    if (returnedSupportingPackages.length !== inputLength) {
+      throw new Error('One or more of the reference Supporting packages could not be found')
+    }
+    return new Map(returnedSupportingPackages.map((obj) => [obj.uuid, obj]))
   }
 
   public async createLineItemsSheet(customerXRefID: string): Promise<string> {
@@ -280,6 +304,7 @@ export default class SupportingPackageService {
       date,
       users,
       files,
+      communications
     } = supportingPackageRequest
 
     const [label, category, usersRequest, attachment] = await Promise.all([
@@ -324,6 +349,7 @@ export default class SupportingPackageService {
       userXRefID,
     })
 
+    // add sp users
     await this.#supportingPackagesUsersService.insertSupportingPackageAndUserRelationships({
       relationships: users.map((user) => ({
         supportingPackageID: createdSP.id.toString(),
@@ -347,10 +373,75 @@ export default class SupportingPackageService {
       }
     )
 
+    await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships({
+      relationships: communications.map((communication) => ({
+        text: communication.text,
+        cellLink: communication.cellLink,
+        isCellLinkValid: communication.isCellLinkValid,
+        replyToCommunicationUUID: communication.replyToCommunicationUUID,
+        isChangeRequest: communication.isChangeRequest,
+        supportingPackageID: createdSP.id,
+        attachments: communication.attachments,
+        users: communication.users
+      })),
+      supportingPackageId: createdSP.id,
+      userXRefID
+    })
+
     return this.getSupportingPackage({
       customerXRefID,
       supportingPackageUUID: createdSP.uuid,
     })
+  }
+
+  public async createSupportingPackageCommunication({
+    customerXRefID,
+    supportingPackageUUID,
+    communication,
+    userXRefID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+    communication: SupportingPackageCommunicationRequest
+    userXRefID: string
+  }): Promise<SupportingPackageCommunicationResponse> {
+    await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+    const {
+      text,
+      cellLink,
+      isCellLinkValid,
+      replyToCommunicationUUID,
+      isChangeRequest,
+      attachments,
+      users,
+    } = communication
+
+    const [supportingPackage] = await Promise.all([
+      this.validateAndGetSupportingPackages({
+        identifiers: {
+          uuids: [supportingPackageUUID],
+        },
+      }),
+    ])
+
+    const createdCommunication = await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships({
+      relationships: [{
+        text,
+        cellLink,
+        isCellLinkValid,
+        replyToCommunicationUUID :replyToCommunicationUUID ?? null ,
+        isChangeRequest,
+        attachments,
+        users,
+      }],
+      supportingPackageId: supportingPackage.get(supportingPackageUUID).id,
+      userXRefID
+    })
+
+    return createdCommunication[0]
   }
 
   public async updateSupportingPackage({
@@ -513,6 +604,10 @@ export default class SupportingPackageService {
         }
       )
 
+    const communications = await this.#supportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageId({
+      id
+    })
+
     return {
       uuid,
       number,
@@ -533,6 +628,7 @@ export default class SupportingPackageService {
       createdBy,
       updatedAt,
       updatedBy,
+      communications,
     }
   }
 

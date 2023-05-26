@@ -6,6 +6,8 @@ import {
   getLineItemSheetContent,
   updateSupportingPackage,
   getSupportingPackage,
+  createSupportingPackageCommunication,
+  getSupportingPackageCommunicationByCommunicationUUID,
 } from '../routes/handlers/supportingPackages'
 
 const router = Router()
@@ -25,6 +27,9 @@ router.get(
 router.post(`/:customerXRefID/supporting-packages/`, createSupportingPackage)
 router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, updateSupportingPackage)
 router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, getSupportingPackage)
+router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications`, createSupportingPackageCommunication)
+router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications/:communicationUUID`, getSupportingPackageCommunicationByCommunicationUUID)
+
 
 // this.router.use(
 //   ...openApiValidatorMiddlewares({

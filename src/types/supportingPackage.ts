@@ -1,4 +1,10 @@
-import { EntityDate, SupportingPackageUserResponse, SupportingPackageUserRequest, EntityDateWithDelete, File } from '../types'
+import { EntityDate,
+  SupportingPackageUserResponse,
+  EntityDateWithDelete,
+  File,
+  SupportingPackageUserRequest,
+  SupportingPackageCommunicationRequest,
+  SupportingPackageCommunicationResponse} from '../types'
 export interface SupportingPackageRequest {
   uuid: string
   number: string
@@ -12,6 +18,7 @@ export interface SupportingPackageRequest {
   journalNumber?: string
   users: SupportingPackageUserRequest[]
   files: supportingPackageFile[]
+  communications: SupportingPackageCommunicationRequest[]
 }
 
 export interface supportingPackageFile {
@@ -48,6 +55,7 @@ export interface SupportingPackageResponse extends EntityDate {
   journalNumber: string
   users: SupportingPackageUserResponse[]
   files: SupportingPackageAttachmentResponseWithUUID[]
+  communications: SupportingPackageCommunicationResponse[]
 }
 
 export interface SupportingPackageAttachmentResponse  extends EntityDateWithDelete {
