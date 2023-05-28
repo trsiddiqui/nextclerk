@@ -29,6 +29,8 @@ services:
   #     - postgres
   #   depends_on:
   #     - postgres
+  #     - redis
+  #     - spreadsheet-api-service
   postgres:
     restart: always
     image: postgres:latest
@@ -49,6 +51,11 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - redis:/data
+  spreadsheet-api-service:
+    image: trsiddiqui1989/ej2-spreadsheet-web-services
+    restart: always
+    ports:
+      - '8080:80'
 
 networks:
   backend:
