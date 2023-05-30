@@ -1,9 +1,12 @@
 import { S3 } from 'aws-sdk'
+import fs from 'fs'
 import { Request } from 'express'
 import { initBucket } from '../../utils/s3/checkBucket'
 
 import { getFromS3, uploadToS3 } from '../../services/uploadToS3'
-import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME } from '@/config'
+import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME, DRIVE_ID } from '@/config'
+import { getAccessToken } from '@/utils/util'
+import axios from 'axios'
 
 // TODO: Use the file middleware native export to s3
 
@@ -43,7 +46,7 @@ export class Uploader {
       mimetype: req.file.mimetype,
       originalname: req.file.originalname,
       size: req.file.size,
-      uploaded: uploadRes.data
+      uploaded: uploadRes.data,
     }
 
     if (uploadRes.success) {
@@ -61,12 +64,48 @@ export class Uploader {
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
     })
 
-    await getFromS3 ({
+    await getFromS3({
       s3,
       customerXRefID,
       bucketName: `supporting-packages`,
       fileUUID,
     })
-
   }
+
+  // TODO: DELETE BELOW \/\/\/\/\/
+
+  static testing = async (req: Request, res: any): Promise<void> => {
+    const accessToken = await getAccessToken()
+
+    console.log('got token', accessToken)
+
+    // Check if customer folder exists
+    const customers = (
+      await axios.get(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.value
+
+    console.log('customers', JSON.stringify(customers, null, 2))
+
+    const customerFolderId = customers.find((customer) => customer.name === 'CustomerXRefID').id
+
+    const fileBuffer = fs.readFileSync('/Users/tsiddiqui/Downloads/testing.xlsx')
+
+    await axios.put(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/LineItemFile.xlsx:/content`,
+      fileBuffer,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+  }
+  // TODO: DELETE ABOVE /\/\/\/\/\
 }
