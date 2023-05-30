@@ -2,7 +2,7 @@ import { S3 } from 'aws-sdk'
 import { Request } from 'express'
 import { initBucket } from '../../utils/s3/checkBucket'
 
-import { uploadToS3 } from '../../services/uploadToS3'
+import { getFromS3, uploadToS3 } from '../../services/uploadToS3'
 import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME } from '@/config'
 
 // TODO: Use the file middleware native export to s3
@@ -51,5 +51,22 @@ export class Uploader {
     } else {
       res.status(400).json(uploadRes)
     }
+  }
+
+  static copyFileToOneDrive = async (req: Request, res: any): Promise<void> => {
+    const { customerXRefID, fileUUID } = req.params
+
+    const s3 = new S3({
+      accessKeyId: AWS_ACCESS_KEY_ID,
+      secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    })
+
+    await getFromS3 ({
+      s3,
+      customerXRefID,
+      bucketName: `supporting-packages`,
+      fileUUID,
+    })
+
   }
 }

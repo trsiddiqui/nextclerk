@@ -20,4 +20,7 @@ router.post(
   Uploader.Upload
 )
 
+router.post(`/:customerXRefID/files/:fileUUID`, Uploader.copyFileToOneDrive)
+
+
 export default router
