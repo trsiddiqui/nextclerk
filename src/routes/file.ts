@@ -20,4 +20,12 @@ router.post(
   Uploader.Upload
 )
 
+router.post(`/:customerXRefID/files/:fileUUID`, Uploader.copyFileFromS3ToSharepoint)
+
+router.post(`/:customerXRefID/files`, Uploader.createMasterFileInSharepoint)
+
+router.get(`/:customerXRefID/files/:fileUUID`, Uploader.getFileFromSharepoint)
+
+// router.get(`/testing`, Uploader.testing)
+
 export default router

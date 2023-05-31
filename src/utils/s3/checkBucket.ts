@@ -9,7 +9,7 @@ export const checkBucket = async (s3: S3, bucketName:string) => {
   try {
     const res =  await s3.headBucket({Bucket: bucketName}).promise()
 
-    console.log("Bucket already Exist", res.$response.data)
+    console.log("Bucket already Exist", res.$response)
 
     return { success: true, message: "Bucket already Exist",data: {}}
   } catch (error) {
