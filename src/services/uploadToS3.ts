@@ -5,9 +5,10 @@ import { v4 } from 'uuid'
 import path from 'path'
 import { BUCKET_NAME, DRIVE_ID } from '@/config'
 import { $FilesManager } from '@/models'
-import { $EntityService } from './index'
+import { $EntityService, $FileService } from './index'
 import { checkBucket, initBucket } from '@/utils/s3/checkBucket'
 import { getAccessToken } from '@/utils/util'
+import { File } from '@/types'
 
 /**
  * @name uploadToS3
@@ -49,6 +50,7 @@ export const uploadToS3 = async (
         mimeType: mimetype,
         location: res.Location,
       }
+      // TODO: majid need to move this to service
       await $FilesManager.upsertFile({
         file: uploadedFile,
       })
@@ -70,7 +72,7 @@ export const uploadToS3 = async (
 }
 
 
-export const getFromS3 = async ({
+export const getFromS3AndStoreInSharepoint = async ({
   s3,
   customerXRefID,
   bucketName,
@@ -80,11 +82,17 @@ export const getFromS3 = async ({
   customerXRefID: string
   bucketName: string
   fileUUID: string
-}) => {
+}): Promise<any> => {
 
   const entity = await $EntityService.validateAndGetEntities({
     identifiers: {
       uuids: [customerXRefID]
+    }
+  })
+
+  await $FileService.validateAndGetFiles({
+    identifiers: {
+      uuids: [fileUUID]
     }
   })
   const bucketStatus = await checkBucket(s3, bucketName)
@@ -116,26 +124,138 @@ export const getFromS3 = async ({
     }
   })
 
-  const rs =  s3.getObject(params).createReadStream()
-  await uploadToOneDrive({
+  const urlObject = await uploadToSharepoint({
     dir,
     customerXRefID,
-    fileName
+    fileName,
   })
-  // return content
-  // const response = await s3.getObject(params).promise()
-  // return response.Body
+  return urlObject
 
 }
 
-export const uploadToOneDrive = async ({
+export const getFileFromSharepoint = async ({
+  s3,
+  customerXRefID,
+  bucketName,
+  fileUUID,
+}: {
+  s3: S3
+  customerXRefID: string
+  bucketName: string
+  fileUUID: string
+}): Promise<any> => {
+
+  const entity = await $EntityService.validateAndGetEntities({
+    identifiers: {
+      uuids: [customerXRefID]
+    }
+  })
+
+  await $FileService.validateAndGetFiles({
+    identifiers: {
+      uuids: [fileUUID]
+    }
+  })
+
+  // check file in sharepoint
+  const fileUrl = await isFileExistInSharepoint({
+    customerXRefID,
+    fileUUID
+  })
+  if (fileUrl) {
+    return fileUrl
+  }
+
+  const bucketStatus = await checkBucket(s3, bucketName)
+  if (!bucketStatus.success) {
+    throw Error(`Error in reading from bucket for Customer ${entity.get(customerXRefID).name}`)
+  }
+
+  const fileName = `${fileUUID}.xlsx`
+
+  const filesInBucket = await s3.listObjectsV2({
+    Bucket: bucketName
+  }).promise()
+
+  console.log(filesInBucket)
+
+  const params = { Bucket: bucketName, Key: `${customerXRefID}/${fileName}`}
+
+  const content =  await s3.getObject(params).promise()
+  const dir = __dirname +`/../nextclerk-tmp`
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir)
+}
+
+
+  fs.writeFile(`${dir}/${fileName}`, content.Body, (err) => {
+    if (err) {
+      console.log(err)
+      throw Error('error on creating temp file')
+    }
+  })
+
+  const urlObject = await uploadToSharepoint({
+    dir,
+    customerXRefID,
+    fileName,
+  })
+  return urlObject
+
+}
+
+export const createMasterFileInSharepoint = async ({
+  customerXRefID
+}:{
+  customerXRefID: string
+}) => {
+
+  const fileName = 'LineItemsTemplate.xlsx'
+
+  const entities = await $EntityService.validateAndGetEntities({
+    identifiers: {
+      uuids: [customerXRefID]
+    }
+  })
+
+  const dir = __dirname +`/../../uploads`
+  const fileUUID = v4()
+  const urlObject = await uploadToSharepoint({
+    dir,
+    customerXRefID,
+    fileName,
+    fileUUID,
+  })
+  if(!urlObject) {
+    throw Error('Error on creating master file in sharepoint')
+  }
+
+  const uploadedFile = {
+    uuid: fileUUID,
+    entityID: entities.get(customerXRefID).id,
+    name: fileName,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    location: '',
+  }
+  // TODO: majid need to move this to service
+  await $FilesManager.upsertFile({
+    file: uploadedFile,
+  })
+
+  return urlObject
+
+}
+
+export const uploadToSharepoint = async ({
   dir,
   customerXRefID,
-  fileName
+  fileName,
+  fileUUID,
 }:{
   dir: string
   customerXRefID: string
   fileName: string
+  fileUUID?: string
 }) => {
   let sharedFilePath
 
@@ -180,88 +300,35 @@ export const uploadToOneDrive = async ({
       customerFolderId = customerFolderCreated.data.id
     }
     console.log('customerFolderId', customerFolderId)
-
-    // check file exist
-    const masterFiles = (
-      await axios.get(
-        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers/${customerXRefID}:/children`,
-        {
-          headers: {
-            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-    ).data.value
-
-    if (!masterFiles.some((file) => file.name === fileName)) {
-      const createdFile =( await axios.put(
-        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}:/content`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-
-          },
-
-        }
-      ), {
-
-      })
+    const fileBuffer = fs.readFileSync(`${dir}/${fileName}`)
+    if( fileUUID) {
+      fileName =  `${fileUUID}.xlsx`
     }
 
-    // Copy line item template file for new customer
-    // https://learn.microsoft.com/en-us/graph/api/driveitem-copy?view=graph-rest-1.0&tabs=http https://learn.microsoft.com/en-us/graph/api/driveitem-copy?view=graph-rest-1.0&tabs=http
-    const lineItemFileCreated = await axios.post(
-      `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/1E15F199-0BE0-4AAC-B94A-D007364CB3E2/copy?@microsoft.graph.conflictBehavior=replace`,
-      {
-        name: fileName,
-        parentReference: {
-          driveId: DRIVE_ID,
-          id: customerFolderId,
-        },
-        '@microsoft.graph.conflictBehavior': 'replace',
-      },
+    // check file exist
+
+    const masterFile = await axios.put(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}:/content`,
+      fileBuffer,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       }
     )
-    console.log('lineItemFileCreated', 'success')
+    console.log(masterFile.data)
+    const masterFileId = masterFile.data.id
 
-    // Get file created info
-    const files = (
-      await axios.get(
-        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers/${customerXRefID}:/children`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-    ).data.value
-    console.log('customers', JSON.stringify(files, null, 2))
-    const file = files.find((x) => x.name === fileName)
-    console.log('created file', JSON.stringify(file, null, 2))
 
-    // // CREATE SHARING LINK
-    // https://learn.microsoft.com/en-us/graph/api/listitem-createlink?view=graph-rest-beta&tabs=http
-    const sharingLinkResp = (
-      await axios.post(
-        `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${file.id}/createLink`,
-        {
-          type: 'edit',
-          scope: 'anonymous',
+    const masterFileWebUrl = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${masterFileId}?select=@microsoft.graph.downloadUrl`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-    ).data
-    console.log('sharing link', JSON.stringify(sharingLinkResp, null, 2))
-    sharedFilePath = sharingLinkResp.link.webUrl
+      }
+    )
+    sharedFilePath =  masterFileWebUrl.data
   } catch (err) {
     console.error(
       err.response.status,
@@ -272,16 +339,87 @@ export const uploadToOneDrive = async ({
   return sharedFilePath
 }
 
-//  export const uploadToSharepoint = async({
-//   dir,
-//   fileName
-//  }:{
-//   dir:string
-//   fileName: string
-//  }) => {
-//   const stats = fs.statSync( dir )
-//   const totalSize = stats.size
-//   const readStream = fs.createReadStream( dir )
-//   const fileObject = FileUpload. .StreamUpload( readStream, fileName, totalSize )
+export const isFileExistInSharepoint = async ({
+  customerXRefID,
+  fileUUID,
+}:{
+  customerXRefID: string
+  fileUUID?: string
+}) => {
+  let sharedFilePath
 
-//  }
+  try {
+    const accessToken = await getAccessToken()
+
+    console.log('got token', accessToken)
+
+    // Check if customer folder exists
+    const customers = (
+      await axios.get(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.value
+
+    console.log('customers', JSON.stringify(customers, null, 2))
+
+    let customerFolderId
+    if (customers.some((customer) => customer.name === customerXRefID)) {
+      customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
+    } else {
+      const customerFolderCreated = await axios.post(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+        {
+          name: customerXRefID,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'fail',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      // console.log('customerFolderCreated', JSON.stringify(customerFolderCreated, null, 2))
+      customerFolderId = customerFolderCreated.data.id
+    }
+    console.log('customerFolderId', customerFolderId)
+    const fileName =  `${fileUUID}.xlsx`
+
+    // check file exist
+
+    const masterFile = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}?select=id`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+    console.log(masterFile.data)
+    const masterFileId = masterFile.data.id
+
+
+    const masterFileWebUrl = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${masterFileId}?select=@microsoft.graph.downloadUrl`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+    sharedFilePath =  masterFileWebUrl.data
+  } catch (err) {
+    console.error(
+      err.response.status,
+      err.response.data.error.code,
+      err.response.data.error.message
+    )
+  }
+  return sharedFilePath
+}
