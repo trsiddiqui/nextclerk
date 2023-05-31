@@ -200,6 +200,8 @@ export const getFileFromSharepoint = async ({
     customerXRefID,
     fileName,
   })
+
+  // TODO: majid delete temp file
   return urlObject
 
 }
