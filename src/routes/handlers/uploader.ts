@@ -1,13 +1,16 @@
 import { S3 } from 'aws-sdk'
 import { Request, Response } from 'express'
+import fs from 'fs'
 
+import { uploadToS3, uploadUpdatedFileToS3 } from '../../services/S3.service'
+import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } from '@/config'
+import { $FileService } from '@/services'
 import {
+  getFromS3AndStoreInSharepoint,
   createMasterFileInSharepoint,
   getFileFromSharepoint,
-  getFromS3AndStoreInSharepoint,
-  uploadToS3,
-} from '../../services/uploadToS3'
-import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } from '@/config'
+  uploadUpdatedFileToSharepoint,
+} from '@/services/sharepoint.service'
 
 const s3 = new S3({
   accessKeyId: AWS_ACCESS_KEY_ID,
@@ -33,32 +36,6 @@ export type UploadedFileProps = {
 
 export class Uploader {
   static Upload = async (req: Request, res: any) => {
-    const { customerXRefID } = req.params
-
-    // TODO: Also store this file in db with entityID
-    // Initialize bucket
-    // await initBucket(s3, BUCKET_NAME)
-
-    // get file data through req.file thank to multer
-    console.log('file object', req.file)
-
-    const uploadRes = await uploadToS3(s3, customerXRefID, req.file)
-
-    const uploadedFile = {
-      mimetype: req.file.mimetype,
-      originalname: req.file.originalname,
-      size: req.file.size,
-      uploaded: uploadRes.data,
-    }
-
-    if (uploadRes.success) {
-      res.status(200).json(uploadedFile)
-    } else {
-      res.status(400).json(uploadRes)
-    }
-  }
-
-  static updateContentsOfFile = async (req: Request, res: Response) => {
     const { customerXRefID } = req.params
 
     // TODO: Also store this file in db with entityID
@@ -137,5 +114,45 @@ export class Uploader {
     } else {
       res.status(400)
     }
+  }
+
+  static updateContentsOfFile = async (req: Request, res: Response) => {
+    const { customerXRefID, fileUUID } = req.params
+
+    const files = await $FileService.validateAndGetFilesByIds({
+      identifiers: {
+        uuids: [fileUUID],
+      },
+    })
+
+    const currentFile = files.get(fileUUID)
+
+    // TODO: Also store this file in db with entityID
+    // Initialize bucket
+    // await initBucket(s3, BUCKET_NAME)
+
+    // get file data through req.file thank to multer
+    console.log('file object', req.file)
+
+    await uploadUpdatedFileToS3(s3, customerXRefID, req.file, currentFile.uuid)
+
+    const fileName = `${fileUUID}.xlsx`
+    const params = { Bucket: `supporting-packages`, Key: `${customerXRefID}/${fileName}` }
+
+    const content = await s3.getObject(params).promise()
+    const dir = __dirname + `/../../nextclerk-tmp`
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir)
+    }
+
+    fs.writeFileSync(`${dir}/${fileName}`, content.Body as NodeJS.ArrayBufferView)
+    await uploadUpdatedFileToSharepoint({
+      customerXRefID,
+      dir,
+      fileName,
+      fileUUID,
+    })
+
+    res.send(200)
   }
 }

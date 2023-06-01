@@ -10,71 +10,8 @@ import { checkBucket, initBucket } from '@/utils/s3/checkBucket'
 import { getAccessToken } from '@/utils/util'
 import { File } from '@/types'
 
-/**
- * @name uploadToS3
- * @param {S3} s3
- * @param {File} fileData
- * @returns {Promise<{success:boolean; message: string; data: object;}>}
- */
-export const uploadToS3 = async (
-  s3: S3,
-  customerXRefID: string,
-  fileData?: Express.Multer.File
-): Promise<{ success: boolean; message: string; data: object }> => {
-  try {
-    // const fileContent = fs.readFileSync(fileData!.path);
-
-    const extension = path.extname(fileData!.originalname)
-    const { originalname, mimetype } = fileData
-    const uuid = v4()
-    const uuidFile = `${uuid}${extension}`
-
-    const entity = await $EntityService.validateAndGetEntities({
-      identifiers: {
-        uuids: [customerXRefID],
-      },
-    })
-
-    const params = {
-      Bucket: BUCKET_NAME,
-      Key: `${customerXRefID}/${uuidFile}`,
-      Body: fileData.buffer,
-    }
-
-    try {
-      const res = await s3.upload(params).promise()
-      const uploadedFile = {
-        uuid,
-        entityID: entity.get(customerXRefID).id,
-        name: originalname,
-        mimeType: mimetype,
-        location: res.Location,
-      }
-      // TODO: majid need to move this to service
-      await $FilesManager.upsertFile({
-        file: uploadedFile,
-      })
-
-      delete uploadedFile.entityID
-
-      console.log('File Uploaded with Successful', res.Location)
-
-      return {
-        success: true,
-        message: 'File Uploaded with Successful',
-        data: {
-          ...uploadedFile,
-          customerXRefID,
-        },
-      }
-    } catch (error) {
-      return { success: false, message: 'Unable to Upload the file', data: error }
-    }
-  } catch (error) {
-    return { success: false, message: 'Unable to access this file', data: {} }
-  }
-}
-
+// TODO: Refactor this
+// Use S3 service to get from S3 and then call uploadToSharepoint to store in sharepoint
 export const getFromS3AndStoreInSharepoint = async ({
   s3,
   customerXRefID,
@@ -127,7 +64,7 @@ export const getFromS3AndStoreInSharepoint = async ({
     }
   })
 
-  const urlObject = await uploadToSharepoint({
+  const urlObject = await uploadToSharepointAndGetLinks({
     dir,
     customerXRefID,
     fileName,
@@ -197,7 +134,7 @@ export const getFileFromSharepoint = async ({
     }
   })
 
-  const urlObject = await uploadToSharepoint({
+  const urlObject = await uploadToSharepointAndGetLinks({
     dir,
     customerXRefID,
     fileName,
@@ -207,6 +144,8 @@ export const getFileFromSharepoint = async ({
   return urlObject
 }
 
+// TODO: Refactor this
+// Use a service or handler to find template and call uploadToSharepoint to upload the template
 export const createMasterFileInSharepoint = async ({
   customerXRefID,
 }: {
@@ -222,7 +161,7 @@ export const createMasterFileInSharepoint = async ({
 
   const dir = __dirname + `/../../uploads`
   const fileUUID = v4()
-  const urlObject = await uploadToSharepoint({
+  const urlObject = await uploadToSharepointAndGetLinks({
     dir,
     customerXRefID,
     fileName,
@@ -256,7 +195,7 @@ export const createMasterFileInSharepoint = async ({
   }
 }
 
-export const uploadToSharepoint = async ({
+export const uploadToSharepointAndGetLinks = async ({
   dir,
   customerXRefID,
   fileName,
@@ -448,5 +387,79 @@ export const isFileExistInSharepoint = async ({
       err.response.data.error.message
     )
   }
+  return sharedFilePath
+}
+
+export const uploadUpdatedFileToSharepoint = async ({
+  dir,
+  customerXRefID,
+  fileName,
+  fileUUID,
+}: {
+  dir: string
+  customerXRefID: string
+  fileName: string
+  fileUUID: string
+}): Promise<{ '@microsoft.graph.downloadUrl': string; sharingLink: string }> => {
+  let sharedFilePath
+
+  const accessToken = await getAccessToken()
+
+  console.log('got token', accessToken)
+
+  // Check if customer folder exists
+  const customers = (
+    await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+  ).data.value
+
+  console.log('customers', JSON.stringify(customers, null, 2))
+
+  // TODO: Store customer folder ID so that we dont have to do these calls
+  let customerFolderId
+  if (customers.some((customer) => customer.name === customerXRefID)) {
+    customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
+  } else {
+    const customerFolderCreated = await axios.post(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+      {
+        name: customerXRefID,
+        folder: {},
+        '@microsoft.graph.conflictBehavior': 'fail',
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    // console.log('customerFolderCreated', JSON.stringify(customerFolderCreated, null, 2))
+    customerFolderId = customerFolderCreated.data.id
+  }
+  console.log('customerFolderId', customerFolderId)
+  const fileBuffer = fs.readFileSync(`${dir}/${fileName}`)
+  if (fileUUID) {
+    fileName = `${fileUUID}.xlsx`
+  }
+
+  // check file exist
+
+  await axios.put(
+    `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}:/content`,
+    fileBuffer,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+  // sharedFilePath = sharingLinkResp.link.webUrl
   return sharedFilePath
 }
