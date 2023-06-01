@@ -355,6 +355,26 @@ export const uploadToSharepoint = async ({
       )
     ).data
 
+    const permissionId = (
+      await axios.get(
+        `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${masterFileId}/permissions`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.value[0].id
+
+    const x = await axios.delete(
+      `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${masterFileId}/permissions/${permissionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
     sharedFilePath['sharingLink'] = sharingLinkResp.link.webUrl
     // sharedFilePath = sharingLinkResp.link.webUrl
   } catch (err) {
