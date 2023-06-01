@@ -23,6 +23,7 @@ export const isEmpty = (value: string | number | object): boolean => {
 }
 
 export const getAccessToken = async (): Promise<string> => {
+  // TODO: Store access token in redis
   const accessToken = (
     await axios.post(
       `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,

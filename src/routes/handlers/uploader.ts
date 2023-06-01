@@ -1,12 +1,18 @@
 import { S3 } from 'aws-sdk'
-import fs from 'fs'
-import { Request } from 'express'
-import { initBucket } from '../../utils/s3/checkBucket'
+import { Request, Response } from 'express'
 
-import { createMasterFileInSharepoint, getFileFromSharepoint, getFromS3AndStoreInSharepoint, uploadToS3 } from '../../services/uploadToS3'
-import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME, DRIVE_ID } from '@/config'
-import { getAccessToken } from '@/utils/util'
-import axios from 'axios'
+import {
+  createMasterFileInSharepoint,
+  getFileFromSharepoint,
+  getFromS3AndStoreInSharepoint,
+  uploadToS3,
+} from '../../services/uploadToS3'
+import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } from '@/config'
+
+const s3 = new S3({
+  accessKeyId: AWS_ACCESS_KEY_ID,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+})
 
 // TODO: Use the file middleware native export to s3
 
@@ -28,10 +34,6 @@ export type UploadedFileProps = {
 export class Uploader {
   static Upload = async (req: Request, res: any) => {
     const { customerXRefID } = req.params
-    const s3 = new S3({
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-    })
 
     // TODO: Also store this file in db with entityID
     // Initialize bucket
@@ -56,7 +58,33 @@ export class Uploader {
     }
   }
 
-  static copyFileFromS3ToSharepoint = async (req: Request, res: any): Promise<void> => {
+  static updateContentsOfFile = async (req: Request, res: Response) => {
+    const { customerXRefID } = req.params
+
+    // TODO: Also store this file in db with entityID
+    // Initialize bucket
+    // await initBucket(s3, BUCKET_NAME)
+
+    // get file data through req.file thank to multer
+    console.log('file object', req.file)
+
+    const uploadRes = await uploadToS3(s3, customerXRefID, req.file)
+
+    const uploadedFile = {
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+      size: req.file.size,
+      uploaded: uploadRes.data,
+    }
+
+    if (uploadRes.success) {
+      res.status(200).json(uploadedFile)
+    } else {
+      res.status(400).json(uploadRes)
+    }
+  }
+
+  static chooseMasterFile = async (req: Request, res: any): Promise<void> => {
     const { customerXRefID, fileUUID } = req.params
 
     const s3 = new S3({
@@ -80,11 +108,11 @@ export class Uploader {
   static createMasterFileInSharepoint = async (req: Request, res: any): Promise<void> => {
     const { customerXRefID } = req.params
 
-    const copiedFileAddress = await createMasterFileInSharepoint({
+    const response = await createMasterFileInSharepoint({
       customerXRefID,
     })
-    if (copiedFileAddress) {
-      res.status(200).json(copiedFileAddress)
+    if (response) {
+      res.status(200).json(response)
     } else {
       res.status(400)
     }

@@ -31,13 +31,13 @@ export const uploadToS3 = async (
 
     const entity = await $EntityService.validateAndGetEntities({
       identifiers: {
-        uuids: [customerXRefID]
-      }
+        uuids: [customerXRefID],
+      },
     })
 
     const params = {
       Bucket: BUCKET_NAME,
-      Key: uuidFile,
+      Key: `${customerXRefID}/${uuidFile}`,
       Body: fileData.buffer,
     }
 
@@ -59,10 +59,14 @@ export const uploadToS3 = async (
 
       console.log('File Uploaded with Successful', res.Location)
 
-      return { success: true, message: 'File Uploaded with Successful', data: {
-        ...uploadedFile,
-        customerXRefID
-      } }
+      return {
+        success: true,
+        message: 'File Uploaded with Successful',
+        data: {
+          ...uploadedFile,
+          customerXRefID,
+        },
+      }
     } catch (error) {
       return { success: false, message: 'Unable to Upload the file', data: error }
     }
@@ -70,7 +74,6 @@ export const uploadToS3 = async (
     return { success: false, message: 'Unable to access this file', data: {} }
   }
 }
-
 
 export const getFromS3AndStoreInSharepoint = async ({
   s3,
@@ -83,17 +86,16 @@ export const getFromS3AndStoreInSharepoint = async ({
   bucketName: string
   fileUUID: string
 }): Promise<any> => {
-
   const entity = await $EntityService.validateAndGetEntities({
     identifiers: {
-      uuids: [customerXRefID]
-    }
+      uuids: [customerXRefID],
+    },
   })
 
   await $FileService.validateAndGetFiles({
     identifiers: {
-      uuids: [fileUUID]
-    }
+      uuids: [fileUUID],
+    },
   })
   const bucketStatus = await checkBucket(s3, bucketName)
   if (!bucketStatus.success) {
@@ -102,22 +104,23 @@ export const getFromS3AndStoreInSharepoint = async ({
 
   const fileName = `${fileUUID}.xlsx`
 
-  const filesInBucket = await s3.listObjectsV2({
-    Bucket: bucketName
-  }).promise()
+  const filesInBucket = await s3
+    .listObjectsV2({
+      Bucket: bucketName,
+    })
+    .promise()
 
   console.log(filesInBucket)
 
-  const params = { Bucket: bucketName, Key: `${customerXRefID}/${fileName}`}
+  const params = { Bucket: bucketName, Key: `${customerXRefID}/${fileName}` }
 
-  const content =  await s3.getObject(params).promise()
-  const dir = __dirname +`/../nextclerk-tmp`
-  if (!fs.existsSync(dir)){
+  const content = await s3.getObject(params).promise()
+  const dir = __dirname + `/../nextclerk-tmp`
+  if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir)
-}
+  }
 
-
-  fs.writeFile(`${dir}/${fileName}`, content.Body, (err) => {
+  fs.writeFile(`${dir}/${fileName}`, content.Body as NodeJS.ArrayBufferView, (err) => {
     if (err) {
       console.log(err)
       throw Error('error on creating temp file')
@@ -130,7 +133,6 @@ export const getFromS3AndStoreInSharepoint = async ({
     fileName,
   })
   return urlObject
-
 }
 
 export const getFileFromSharepoint = async ({
@@ -144,23 +146,22 @@ export const getFileFromSharepoint = async ({
   bucketName: string
   fileUUID: string
 }): Promise<any> => {
-
   const entity = await $EntityService.validateAndGetEntities({
     identifiers: {
-      uuids: [customerXRefID]
-    }
+      uuids: [customerXRefID],
+    },
   })
 
   await $FileService.validateAndGetFiles({
     identifiers: {
-      uuids: [fileUUID]
-    }
+      uuids: [fileUUID],
+    },
   })
 
   // check file in sharepoint
   const fileUrl = await isFileExistInSharepoint({
     customerXRefID,
-    fileUUID
+    fileUUID,
   })
   if (fileUrl) {
     return fileUrl
@@ -173,22 +174,23 @@ export const getFileFromSharepoint = async ({
 
   const fileName = `${fileUUID}.xlsx`
 
-  const filesInBucket = await s3.listObjectsV2({
-    Bucket: bucketName
-  }).promise()
+  const filesInBucket = await s3
+    .listObjectsV2({
+      Bucket: bucketName,
+    })
+    .promise()
 
   console.log(filesInBucket)
 
-  const params = { Bucket: bucketName, Key: `${customerXRefID}/${fileName}`}
+  const params = { Bucket: bucketName, Key: `${customerXRefID}/${fileName}` }
 
-  const content =  await s3.getObject(params).promise()
-  const dir = __dirname +`/../nextclerk-tmp`
-  if (!fs.existsSync(dir)){
+  const content = await s3.getObject(params).promise()
+  const dir = __dirname + `/../nextclerk-tmp`
+  if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir)
-}
+  }
 
-
-  fs.writeFile(`${dir}/${fileName}`, content.Body, (err) => {
+  fs.writeFile(`${dir}/${fileName}`, content.Body as NodeJS.ArrayBufferView, (err) => {
     if (err) {
       console.log(err)
       throw Error('error on creating temp file')
@@ -203,24 +205,22 @@ export const getFileFromSharepoint = async ({
 
   // TODO: majid delete temp file
   return urlObject
-
 }
 
 export const createMasterFileInSharepoint = async ({
-  customerXRefID
-}:{
+  customerXRefID,
+}: {
   customerXRefID: string
 }) => {
-
   const fileName = 'LineItemsTemplate.xlsx'
 
   const entities = await $EntityService.validateAndGetEntities({
     identifiers: {
-      uuids: [customerXRefID]
-    }
+      uuids: [customerXRefID],
+    },
   })
 
-  const dir = __dirname +`/../../uploads`
+  const dir = __dirname + `/../../uploads`
   const fileUUID = v4()
   const urlObject = await uploadToSharepoint({
     dir,
@@ -228,7 +228,7 @@ export const createMasterFileInSharepoint = async ({
     fileName,
     fileUUID,
   })
-  if(!urlObject) {
+  if (!urlObject) {
     throw Error('Error on creating master file in sharepoint')
   }
 
@@ -244,8 +244,16 @@ export const createMasterFileInSharepoint = async ({
     file: uploadedFile,
   })
 
-  return urlObject
-
+  return {
+    originalname: uploadedFile.name,
+    sharingLink: urlObject.sharingLink,
+    mimetype: uploadedFile.mimeType,
+    downloadUrl: urlObject['@microsoft.graph.downloadUrl'],
+    size: 16 * 1024,
+    uploaded: {
+      uuid: fileUUID,
+    },
+  }
 }
 
 export const uploadToSharepoint = async ({
@@ -253,12 +261,12 @@ export const uploadToSharepoint = async ({
   customerXRefID,
   fileName,
   fileUUID,
-}:{
+}: {
   dir: string
   customerXRefID: string
   fileName: string
   fileUUID?: string
-}) => {
+}): Promise<{ '@microsoft.graph.downloadUrl': string; sharingLink: string }> => {
   let sharedFilePath
 
   try {
@@ -280,6 +288,7 @@ export const uploadToSharepoint = async ({
 
     console.log('customers', JSON.stringify(customers, null, 2))
 
+    // TODO: Store customer folder ID so that we dont have to do these calls
     let customerFolderId
     if (customers.some((customer) => customer.name === customerXRefID)) {
       customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
@@ -303,8 +312,8 @@ export const uploadToSharepoint = async ({
     }
     console.log('customerFolderId', customerFolderId)
     const fileBuffer = fs.readFileSync(`${dir}/${fileName}`)
-    if( fileUUID) {
-      fileName =  `${fileUUID}.xlsx`
+    if (fileUUID) {
+      fileName = `${fileUUID}.xlsx`
     }
 
     // check file exist
@@ -321,7 +330,6 @@ export const uploadToSharepoint = async ({
     console.log(masterFile.data)
     const masterFileId = masterFile.data.id
 
-
     const masterFileWebUrl = await axios.get(
       `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${masterFileId}?select=@microsoft.graph.downloadUrl`,
       {
@@ -330,7 +338,25 @@ export const uploadToSharepoint = async ({
         },
       }
     )
-    sharedFilePath =  masterFileWebUrl.data
+    sharedFilePath = masterFileWebUrl.data
+
+    const sharingLinkResp = (
+      await axios.post(
+        `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${masterFileId}/createLink`,
+        {
+          type: 'edit',
+          scope: 'anonymous',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data
+
+    sharedFilePath['sharingLink'] = sharingLinkResp.link.webUrl
+    // sharedFilePath = sharingLinkResp.link.webUrl
   } catch (err) {
     console.error(
       err.response.status,
@@ -344,7 +370,7 @@ export const uploadToSharepoint = async ({
 export const isFileExistInSharepoint = async ({
   customerXRefID,
   fileUUID,
-}:{
+}: {
   customerXRefID: string
   fileUUID?: string
 }) => {
@@ -391,7 +417,7 @@ export const isFileExistInSharepoint = async ({
       customerFolderId = customerFolderCreated.data.id
     }
     console.log('customerFolderId', customerFolderId)
-    const fileName =  `${fileUUID}.xlsx`
+    const fileName = `${fileUUID}.xlsx`
 
     // check file exist
 
@@ -406,7 +432,6 @@ export const isFileExistInSharepoint = async ({
     console.log(masterFile.data)
     const masterFileId = masterFile.data.id
 
-
     const masterFileWebUrl = await axios.get(
       `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${masterFileId}?select=@microsoft.graph.downloadUrl`,
       {
@@ -415,7 +440,7 @@ export const isFileExistInSharepoint = async ({
         },
       }
     )
-    sharedFilePath =  masterFileWebUrl.data
+    sharedFilePath = masterFileWebUrl.data
   } catch (err) {
     console.error(
       err.response.status,
