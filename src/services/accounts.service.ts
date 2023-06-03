@@ -41,7 +41,7 @@ export default class AccountService {
     })
 
     const accounts = await this.#accountsManager.getAllAccounts({
-      entityID: entity.get(customerXRefID).id,
+      entityID:  entity.get(customerXRefID).id,
       txn: null,
     })
 
