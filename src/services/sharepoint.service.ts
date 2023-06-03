@@ -8,7 +8,7 @@ import { $FilesManager } from '@/models'
 import { $EntityService, $FileService } from './index'
 import { checkBucket, initBucket } from '@/utils/s3/checkBucket'
 import { getAccessToken } from '@/utils/util'
-import { File } from '@/types'
+import { File, FileRequest } from '@/types'
 
 // TODO: Refactor this
 // Use S3 service to get from S3 and then call uploadToSharepoint to store in sharepoint
@@ -461,5 +461,186 @@ export const uploadUpdatedFileToSharepoint = async ({
     }
   )
   // sharedFilePath = sharingLinkResp.link.webUrl
+  return sharedFilePath
+}
+
+export const uploadFileToSharepoint = async (
+  customerXRefID: string,
+  fileData?: Express.Multer.File
+): Promise<{ success: boolean; message: string; data: object }> => {
+  try {
+    let customerFolderId : string
+    const extension = path.extname(fileData!.originalname)
+    const { originalname, mimetype } = fileData
+    const uuid = v4()
+    const uuidFileWithExtension = `${uuid}${extension}`
+
+    const foundEntity = await $EntityService.validateAndGetEntities({
+      identifiers: {
+        uuids: [customerXRefID],
+      },
+    })
+
+    const accessToken = await getAccessToken()
+
+    if (!foundEntity.get(customerXRefID).folderId){
+      customerFolderId = await createCustomerFolderInSharepoint({
+        customerXRefID,
+        accessToken
+      })
+      await $EntityService.upsertEntity({
+        entity: {
+          ...foundEntity.get(customerXRefID),
+          folderId: customerFolderId
+        }
+      })
+    }
+
+    const uploadedFile = await uploadFileToSharepointWhenFolderExist({
+      accessToken,
+      customerFolderId,
+      fileName: uuidFileWithExtension,
+      fileBuffer: fileData.buffer
+    })
+    const uploadedFileObject : FileRequest= {
+      uuid,
+      entityID: foundEntity.get(customerXRefID).id,
+      name: originalname,
+      mimeType: mimetype,
+      location: uploadedFile.sharingLink,
+    }
+    await $FileService.createFile({
+      file: uploadedFileObject
+     })
+
+     return {
+       success: true,
+       message: 'File Uploaded Successfully',
+       data: {
+         ...uploadedFile,
+         customerXRefID,
+       },
+     }
+   } catch (error) {
+     return { success: false, message: 'Unable to Upload the file', data: error }
+   }
+}
+
+export const createCustomerFolderInSharepoint = async ({
+  customerXRefID,
+  accessToken
+}:{
+  customerXRefID: string
+  accessToken: string
+}): Promise<string> => {
+    let customerFolderId
+    try {
+    console.log('got token', accessToken)
+
+    // Check if customer folder exists
+    const customers = (
+      await axios.get(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data.value
+
+    console.log('customers', JSON.stringify(customers, null, 2))
+
+    if (customers.some((customer) => customer.name === customerXRefID)) {
+      customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
+    } else {
+      const customerFolderCreated = await axios.post(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+        {
+          name: customerXRefID,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'fail',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      customerFolderId = customerFolderCreated.data.id
+    }
+    console.log('customerFolderId', customerFolderId)
+  } catch (err) {
+    console.error(
+      err.response.status,
+      err.response.data.error.code,
+      err.response.data.error.message
+    )
+  }
+  return customerFolderId
+
+}
+
+export const uploadFileToSharepointWhenFolderExist = async ({
+  customerFolderId,
+  fileName,
+  fileBuffer,
+  accessToken
+}: {
+  customerFolderId: string
+  fileName?: string
+  fileBuffer: Buffer
+  accessToken: string
+}): Promise<{ '@microsoft.graph.downloadUrl': string; sharingLink: string }> => {
+  let sharedFilePath
+  console.log('MAJID', fileName)
+
+  try {
+
+    console.log('got token', accessToken)
+
+    const uploadedFile = await axios.put(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}:/content`,
+      fileBuffer,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+    const fileId = uploadedFile.data.id
+    const fileWebUrl = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${fileId}?select=@microsoft.graph.downloadUrl`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+    sharedFilePath = fileWebUrl.data
+
+    const sharingLinkResp = (
+      await axios.post(
+        `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${fileId}/createLink`,
+        {
+          type: 'edit',
+          scope: 'anonymous',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data
+    sharedFilePath['sharingLink'] = sharingLinkResp.link.webUrl
+  } catch (err) {
+    console.error(
+      err.response.status,
+      err.response.data.error.code,
+      err.response.data.error.message
+    )
+  }
   return sharedFilePath
 }

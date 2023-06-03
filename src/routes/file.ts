@@ -17,7 +17,8 @@ router.post(
     },
   }),
   // TODO: Replace the following handler with multer storage to s3 native, commented inside the file upload middleware
-  Uploader.Upload
+  Uploader.uploadToSharepoint
+
 )
 
 router.post(`/:customerXRefID/files/:fileUUID`, Uploader.chooseMasterFile)
