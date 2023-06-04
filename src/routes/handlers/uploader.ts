@@ -10,6 +10,7 @@ import {
   createMasterFileInSharepoint,
   getFileFromSharepoint,
   uploadUpdatedFileToSharepoint,
+  uploadFileToSharepoint,
 } from '@/services/sharepoint.service'
 
 const s3 = new S3({
@@ -46,6 +47,27 @@ export class Uploader {
     console.log('file object', req.file)
 
     const uploadRes = await uploadToS3(s3, customerXRefID, req.file)
+
+    const uploadedFile = {
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+      size: req.file.size,
+      uploaded: uploadRes.data,
+    }
+
+    if (uploadRes.success) {
+      res.status(200).json(uploadedFile)
+    } else {
+      res.status(400).json(uploadRes)
+    }
+  }
+
+  static uploadToSharepoint = async (req: Request, res: any) => {
+    const { customerXRefID } = req.params
+    // get file data through req.file thank to multer
+    console.log('file object', req.file)
+
+    const uploadRes = await uploadFileToSharepoint(customerXRefID, req.file)
 
     const uploadedFile = {
       mimetype: req.file.mimetype,

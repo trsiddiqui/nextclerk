@@ -34,4 +34,24 @@ export default class EntityService {
     return new Map(returnedEntities.map((obj) => [obj.uuid, obj]))
   }
 
+  public async upsertEntity({
+    entity,
+  }: {
+    entity: Partial<Entity>
+  }): Promise<Entity> {
+    const { uuid, name,folderId, isPrimary } = entity
+
+    const affectedEntity = await this.#entitiesManager.upsertEntity({
+      entity: {
+        uuid,
+        name,
+        folderId,
+        isPrimary
+      },
+      userXRefID: 'testUser',
+    })
+
+    return affectedEntity
+  }
+
 }

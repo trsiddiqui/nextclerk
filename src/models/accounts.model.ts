@@ -39,7 +39,7 @@ export default class AccountsManager extends RelationsManager {
     entityID,
     txn,
   }: {
-    entityID: string
+    entityID: number
     txn?: Knex.Transaction
   }): Promise<Account[]> {
     let query = this.#knex

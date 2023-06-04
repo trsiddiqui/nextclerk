@@ -14,6 +14,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('uuid').notNullable()
     table.string('name').notNullable()
     table.boolean('isPrimary').defaultTo(false).notNullable()
+    table.string('folderId')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')

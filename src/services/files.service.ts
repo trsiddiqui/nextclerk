@@ -1,5 +1,5 @@
 import { FilesManager } from '../models'
-import { File } from '../types'
+import { File, FileRequest } from '../types'
 
 export default class FileService {
   #fileManager: FilesManager
@@ -42,5 +42,17 @@ export default class FileService {
     return new Map(
       returnedFiles.map((obj) => ['uuids' in identifiers ? obj.uuid : obj.id.toString(), obj])
     )
+  }
+
+  public async createFile({
+    file
+  }:{
+    file: FileRequest
+  }): Promise<File> {
+    const createdFile = await this.#fileManager.upsertFile({
+      file
+    })
+
+    return createdFile
   }
 }

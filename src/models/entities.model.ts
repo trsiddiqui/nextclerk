@@ -1,5 +1,6 @@
 import { Knex } from 'knex'
 import { Entity } from '../types'
+import { DateTime } from 'luxon'
 
 export default class EntitiesManager {
   #knex: Knex
@@ -30,6 +31,36 @@ export default class EntitiesManager {
     }
 
     return query
+  }
+
+  public async upsertEntity({
+    txn,
+    entity,
+    userXRefID,
+  }: {
+    txn?: Knex.Transaction
+    entity: Partial<Entity>
+    userXRefID: string
+  }): Promise<Entity> {
+    let query = this.#knex
+      .withSchema('public')
+      .table('entities')
+      .insert({
+        ...entity,
+        createdBy: userXRefID,
+        updatedBy: userXRefID,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      })
+      .onConflict(['uuid'])
+      .merge()
+      .returning('*')
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+    const resp = await query
+    return resp[0]
   }
 
 }
