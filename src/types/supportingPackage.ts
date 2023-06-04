@@ -1,15 +1,15 @@
-import { EntityDate,
+import {
+  EntityDate,
   SupportingPackageUserResponse,
   EntityDateWithDelete,
   File,
   SupportingPackageUserRequest,
   SupportingPackageCommunicationRequest,
-  SupportingPackageCommunicationResponse} from '../types'
+  SupportingPackageCommunicationResponse,
+} from '../types'
 export interface SupportingPackageRequest {
-  uuid: string
   number: string
   title: string
-  entityUUID: string
   categoryUUID: string
   labelUUID: string
   isConfidential: boolean
@@ -58,7 +58,7 @@ export interface SupportingPackageResponse extends EntityDate {
   communications: SupportingPackageCommunicationResponse[]
 }
 
-export interface SupportingPackageAttachmentResponse  extends EntityDateWithDelete {
+export interface SupportingPackageAttachmentResponse extends EntityDateWithDelete {
   id: number
   supportingPackageID: number
   fileID: number
@@ -77,5 +77,3 @@ export interface SupportingPackageAttachmentResponseWithUUID {
   name: string
   mimeType?: string
 }
-
-
