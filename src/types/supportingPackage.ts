@@ -61,6 +61,7 @@ export interface SupportingPackageResponse extends EntityDate {
 export interface SupportingPackageAttachmentResponse  extends EntityDateWithDelete {
   id: number
   supportingPackageID: number
+  uuid: string
   fileID: number
   name: string
   mimeType?: string
@@ -68,9 +69,7 @@ export interface SupportingPackageAttachmentResponse  extends EntityDateWithDele
   isMaster: boolean
 }
 
-export type SupportingPackageAttachmentRequest = Omit<SupportingPackageAttachmentResponse, 'id'> & {
-  isMaster: boolean
-}
+export type SupportingPackageAttachmentRequest = Omit<SupportingPackageAttachmentResponse, 'id'>
 export interface SupportingPackageAttachmentResponseWithUUID {
   uuid: string
   isMaster: boolean
