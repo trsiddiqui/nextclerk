@@ -40,12 +40,14 @@ export const $CustomerAuthDetailsService = new CustomerAuthDetailsService({
   customerAuthDetailsManager: $CustomerAuthDetailsManager,
 })
 
-export const $LabelService = new LabelService({
-  labelsManager: $LabelsManager,
-})
 
 export const $EntityService = new EntityService({
   entitiesManager: $EntitiesManager,
+})
+
+export const $LabelService = new LabelService({
+  labelsManager: $LabelsManager,
+  entityService: $EntityService
 })
 
 export const $LocationService = new LocationService({

@@ -1,18 +1,23 @@
 
 import { LabelsManager } from '../models'
-import { Label } from '../types'
+import { Label, LabelResponse } from '../types'
+import EntityService from './entities.service'
 
 export default class LabelService {
 
   #labelsManager: LabelsManager
 
+  #entityService: EntityService
+
   constructor({
     labelsManager,
+    entityService,
   }: {
     labelsManager: LabelsManager
-
+    entityService: EntityService
   }) {
     this.#labelsManager = labelsManager
+    this.#entityService = entityService
   }
 
   public async validateAndGetLabels({
@@ -32,6 +37,29 @@ export default class LabelService {
       throw new Error('One or more of the reference Labels could not be found')
     }
     return new Map(returnedLabels.map((obj) => [obj.uuid, obj]))
+  }
+
+  public async getLabels({
+    entityUuid
+  }: {
+    entityUuid: string
+  }): Promise<LabelResponse[]> {
+
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [entityUuid] },
+    })
+
+    const labels = await this.#labelsManager.getAllLabelsByEntityId({
+      entityID: entity.get(entityUuid).id,
+      txn: null
+    })
+
+    const labelResponse = labels.map(label => ({
+      uuid: label.uuid,
+      label: label.label
+    }))
+
+    return labelResponse
   }
 
 }

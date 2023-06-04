@@ -5,3 +5,8 @@ export interface Label extends EntityDateWithArchive {
   uuid: string
   label: string
 }
+
+export interface LabelResponse {
+  uuid: string
+  label: string
+}
