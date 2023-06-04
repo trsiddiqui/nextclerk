@@ -32,4 +32,23 @@ export default class LabelsManager {
     return query
   }
 
+  public async getAllLabelsByEntityId({
+    entityID,
+    txn,
+  }: {
+    entityID: number
+    txn?: Knex.Transaction
+  }): Promise<Label[]> {
+    let query = this.#knex.withSchema('public')
+      .table('labels')
+      .select<Label[]>('*')
+      .where({ entityID })
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+
+    return query
+  }
+
 }

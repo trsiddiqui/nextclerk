@@ -6,6 +6,7 @@ import { syncIntegrationData } from './handlers/integrations'
 import { getEntityLocations } from './handlers/locations'
 import { getCategories } from './handlers/supportingPackages'
 import { getEntityUsers } from './handlers/users'
+import { getEntityLabels } from './handlers/labels'
 
 const router = Router()
 
@@ -20,6 +21,8 @@ router.get(`/:customerXRefID/locations`, getEntityLocations)
 router.get(`/:customerXRefID/accounts`, getEntityAccounts)
 
 router.get(`/:customerXRefID/customers`, getEntityCustomers)
+
+router.get(`/:entityUuid/labels`, getEntityLabels)
 
 router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 
