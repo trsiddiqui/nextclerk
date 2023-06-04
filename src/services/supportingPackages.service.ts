@@ -17,7 +17,12 @@ import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
 import { DRIVE_ID } from '../config'
 import knex, { Knex } from 'knex'
-import { Category, Label, SupportingPackageCommunicationRequest, SupportingPackageCommunicationResponse } from '@/types'
+import {
+  Category,
+  Label,
+  SupportingPackageCommunicationRequest,
+  SupportingPackageCommunicationResponse,
+} from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
@@ -79,12 +84,12 @@ export default class SupportingPackageService {
   }: {
     identifiers: { uuids: string[] } | { ids: string[] }
   }): Promise<Map<string, SupportingPackage>> {
-    const returnedSupportingPackages = await this.#supportingPackagesManager.getSupportingByIdentifiers({
-      identifiers,
-    })
+    const returnedSupportingPackages =
+      await this.#supportingPackagesManager.getSupportingByIdentifiers({
+        identifiers,
+      })
 
-    const inputLength =
-      'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
+    const inputLength = 'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
     if (returnedSupportingPackages.length !== inputLength) {
       throw new Error('One or more of the reference Supporting packages could not be found')
@@ -304,7 +309,7 @@ export default class SupportingPackageService {
       date,
       users,
       files,
-      communications
+      communications,
     } = supportingPackageRequest
 
     const [label, category, usersRequest, attachment] = await Promise.all([
@@ -373,20 +378,22 @@ export default class SupportingPackageService {
       }
     )
 
-    await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships({
-      relationships: communications.map((communication) => ({
-        text: communication.text,
-        cellLink: communication.cellLink,
-        isCellLinkValid: communication.isCellLinkValid,
-        replyToCommunicationUUID: communication.replyToCommunicationUUID,
-        isChangeRequest: communication.isChangeRequest,
-        supportingPackageID: createdSP.id,
-        attachments: communication.attachments,
-        users: communication.users
-      })),
-      supportingPackageId: createdSP.id,
-      userXRefID
-    })
+    await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships(
+      {
+        relationships: communications.map((communication) => ({
+          text: communication.text,
+          cellLink: communication.cellLink,
+          isCellLinkValid: communication.isCellLinkValid,
+          replyToCommunicationUUID: communication.replyToCommunicationUUID,
+          isChangeRequest: communication.isChangeRequest,
+          supportingPackageID: createdSP.id,
+          attachments: communication.attachments,
+          users: communication.users,
+        })),
+        supportingPackageId: createdSP.id,
+        userXRefID,
+      }
+    )
 
     return this.getSupportingPackage({
       customerXRefID,
@@ -427,19 +434,24 @@ export default class SupportingPackageService {
       }),
     ])
 
-    const createdCommunication = await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships({
-      relationships: [{
-        text,
-        cellLink,
-        isCellLinkValid,
-        replyToCommunicationUUID :replyToCommunicationUUID ?? null ,
-        isChangeRequest,
-        attachments,
-        users,
-      }],
-      supportingPackageId: supportingPackage.get(supportingPackageUUID).id,
-      userXRefID
-    })
+    const createdCommunication =
+      await this.#supportingPackageCommunicationService.insertSupportingPackageAndCommunicationsRelationships(
+        {
+          relationships: [
+            {
+              text,
+              cellLink,
+              isCellLinkValid,
+              replyToCommunicationUUID: replyToCommunicationUUID ?? null,
+              isChangeRequest,
+              attachments,
+              users,
+            },
+          ],
+          supportingPackageId: supportingPackage.get(supportingPackageUUID).id,
+          userXRefID,
+        }
+      )
 
     return createdCommunication[0]
   }
@@ -604,9 +616,12 @@ export default class SupportingPackageService {
         }
       )
 
-    const communications = await this.#supportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageId({
-      id
-    })
+    const communications =
+      await this.#supportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageId(
+        {
+          id,
+        }
+      )
 
     return {
       uuid,
@@ -659,3 +674,55 @@ export default class SupportingPackageService {
   //   return findSupportingPackage
   // }
 }
+
+/**
+ * # PORT
+PORT = 3000
+
+# DATABASE
+DB_HOST = localhost
+DB_PORT = 5432
+DB_USER = dev
+DB_PASSWORD = P@55word12345
+DB_DATABASE = dev
+
+# TOKEN
+SECRET_KEY = secretKey
+
+# LOG
+LOG_FORMAT = dev
+LOG_DIR = ../logs
+
+# CORS
+ORIGIN = *
+CREDENTIALS = true
+
+# SHAREPOINT
+TENANT_ID = 572e28ac-2923-422a-b120-11c14f7502b4
+CLIENT_ID = 5598bdcb-34bc-4cfd-81ca-047701b7019d
+CLIENT_CREDENTIALS = uZ_8Q~i_9zH.06.tqs-VRCR.zfLLjY4r2pWuLdAk
+DRIVE_ID = 'b!dm-qRyBNTkeo26-vg6dtG5aC42C1KR9NrEJ0qa0KaRRu5PrfTzfxTYyrZehs9WJE'
+
+OLD_TENANT_ID = 2246f3d0-0ab6-418c-8216-db7e3afe1606
+OLD_CLIENT_ID = 7a399b91-aab0-405f-b613-467a799f5cf2
+OLD_CLIENT_CREDENTIALS = 1Ch8Q~z-bURNe8V9Hl5J6M3WEMfNLruj3ykOaaft
+OLD_DRIVE_ID = b!UYBdJXCaWkudcT-Ph6QaBrHqfSgi0z1EhEcFwF3jjTP2WkslyhrKQojmj8bqorol
+
+# QuickBooks
+TEMP_QUICKBOOKS_CLIENT_ID = ABh17c67A6FJtYMtxPW86GAduUTLwXyYmkQBdxSwylnvt093Tw
+TEMP_QUICKBOOKS_CLIENT_SECRET = x79g9bZGJiuzRgav6WPOYxP8CWpmSAi4q0wGE0kr
+TEMP_QUICKBOOKS_APPLICATION_ID = 4620816365267419080
+QUICKBOOKS_CALLBACK_API = http://localhost:3000/third-party-auth/quickbooks
+
+
+# REDIS
+REDIS_HOST: localhost
+REDIS_PORT: 6379
+REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+
+# AWS S3
+AWS_ACCESS_KEY_ID=AKIA3QRZS5O4BFX6VAFH
+AWS_SECRET_ACCESS_KEY=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
+BUCKET_NAME=supporting-packages
+
+ */
