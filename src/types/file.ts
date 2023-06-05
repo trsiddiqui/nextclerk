@@ -1,6 +1,6 @@
-import { EntityDate } from "./common"
+import { EntityDate } from './common'
 
-export interface File extends EntityDate{
+export interface File extends EntityDate {
   id: number
   uuid: string
   entityID: number
@@ -8,6 +8,7 @@ export interface File extends EntityDate{
   mimeType: string
   location: string
   remoteReferenceUuid?: string
+  size: number
 }
 
 export interface FileRequest {
@@ -16,6 +17,6 @@ export interface FileRequest {
   name: string
   mimeType: string
   location: string
+  size: number
   remoteReferenceUuid?: string
 }
-

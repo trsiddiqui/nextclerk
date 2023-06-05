@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express'
 import { Knex } from 'knex'
-import { $CategoryService, $SupportingPackageCommunicationService, $SupportingPackageService } from '../../services'
+import {
+  $CategoryService,
+  $SupportingPackageCommunicationService,
+  $SupportingPackageService,
+} from '../../services'
 import { SupportingPackageCommunicationRequest, SupportingPackageRequest } from '@/types'
 
 export const createLineItemsSheet = async (
@@ -164,7 +168,7 @@ export const getSupportingPackage = async (
       customerXRefID,
       supportingPackageUUID,
     })
-
+    console.log(supportingPackage)
     res.status(200).json(supportingPackage)
   } catch (error) {
     next(error)
@@ -180,13 +184,13 @@ export const createSupportingPackageCommunication = async (
     const { customerXRefID, supportingPackageUUID } = req.params
     const supportingPackageCommunication: SupportingPackageCommunicationRequest = req.body
 
-
-    const supportingPackageCommunicationResponse = await $SupportingPackageService.createSupportingPackageCommunication({
-      communication: supportingPackageCommunication,
-      customerXRefID,
-      supportingPackageUUID,
-      userXRefID: 'testUser'
-    })
+    const supportingPackageCommunicationResponse =
+      await $SupportingPackageService.createSupportingPackageCommunication({
+        communication: supportingPackageCommunication,
+        customerXRefID,
+        supportingPackageUUID,
+        userXRefID: 'testUser',
+      })
 
     res.status(200).json(supportingPackageCommunicationResponse)
   } catch (error) {
@@ -202,10 +206,13 @@ export const getSupportingPackageCommunicationByCommunicationUUID = async (
   try {
     const { supportingPackageUUID, communicationUUID } = req.params
 
-    const supportingPackageCommunicationResponse = await $SupportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageIdAndCommunicationUUID({
-      communicationUUIDs: [communicationUUID],
-      supportingPackageId: parseInt (supportingPackageUUID) // TODO: fix here for id instead of UUID
-    })
+    const supportingPackageCommunicationResponse =
+      await $SupportingPackageCommunicationService.getSupportingPackageCommunicationsBySupportingPackageIdAndCommunicationUUID(
+        {
+          communicationUUIDs: [communicationUUID],
+          supportingPackageId: parseInt(supportingPackageUUID), // TODO: fix here for id instead of UUID
+        }
+      )
 
     res.status(200).json(supportingPackageCommunicationResponse)
   } catch (error) {
@@ -219,7 +226,6 @@ export const getCategories = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-
     const categories = await $CategoryService.getCategories()
 
     res.status(200).json(categories)
@@ -227,4 +233,3 @@ export const getCategories = async (
     next(error)
   }
 }
-

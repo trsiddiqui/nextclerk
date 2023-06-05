@@ -41,18 +41,19 @@ export default class SupportingPackageAttachmentService {
     }
 
     const files = await this.#fileService.validateAndGetFilesByIds({
-      identifiers: { ids: [... new Set(supportingPackagesAttachmentsRecords.map( sr => sr.fileID.toString()))]}
+      identifiers: {
+        ids: [...new Set(supportingPackagesAttachmentsRecords.map((sr) => sr.fileID.toString()))],
+      },
     })
-
-    const supportingPackageFiles = supportingPackagesAttachmentsRecords.map( spf => ({
+    const supportingPackageFiles = supportingPackagesAttachmentsRecords.map((spf) => ({
       uuid: files.get(spf.fileID.toString()).uuid,
       isMaster: spf.isMaster,
       name: spf.name,
-      mimeType: spf.mimeType
+      mimeType: spf.mimeType,
+      size: spf.size,
     }))
 
     return supportingPackageFiles
-
   }
 
   public async insertSupportingPackageAndAttachmentRelationships({
@@ -74,7 +75,8 @@ export default class SupportingPackageAttachmentService {
           fileID: relationship.fileID,
           mimeType: relationship.mimeType,
           name: relationship.name,
-          isMaster: relationship.isMaster
+          isMaster: relationship.isMaster,
+          size: relationship.size,
         })),
         userXRefID,
       })
@@ -93,31 +95,35 @@ export default class SupportingPackageAttachmentService {
   }): Promise<SupportingPackageAttachmentResponseWithUUID[]> {
     const existingSupportingPackageAttachmentsRelationships =
       await this.getSupportingPackagesAttachmentsBySupportingPackageId({
-        id: supportingPackageId
+        id: supportingPackageId,
       })
 
     const existingAttachments = await this.#fileService.validateAndGetFiles({
       identifiers: {
-        uuids: [...new Set(existingSupportingPackageAttachmentsRelationships.map((file) => file.uuid))],
+        uuids: [
+          ...new Set(existingSupportingPackageAttachmentsRelationships.map((file) => file.uuid)),
+        ],
       },
     })
 
-    const supportingPackageAttachmentsToBeRemoved = existingSupportingPackageAttachmentsRelationships.filter(
-      (ar) =>
-        attachments.map((attachment) => attachment.uuid).indexOf(ar.uuid) === -1
-    )
+    const supportingPackageAttachmentsToBeRemoved =
+      existingSupportingPackageAttachmentsRelationships.filter(
+        (ar) => attachments.map((attachment) => attachment.uuid).indexOf(ar.uuid) === -1
+      )
 
     await Promise.all(
       supportingPackageAttachmentsToBeRemoved.map(async (spAttachment) => {
-        return this.#supportingPackagesAttachmentsManager.upsertSupportingPackageAndAttachmentRelationship({
-          supportingPackageAndAttachmentRelationship: {
-            supportingPackageID: parseInt(supportingPackageId),
-            fileID: existingAttachments.get(spAttachment.uuid)?.id,
-            deletedAt: DateTime.utc().toJSDate(),
-            deletedBy: userXRefID,
-          },
-          userXRefID,
-        })
+        return this.#supportingPackagesAttachmentsManager.upsertSupportingPackageAndAttachmentRelationship(
+          {
+            supportingPackageAndAttachmentRelationship: {
+              supportingPackageID: parseInt(supportingPackageId),
+              fileID: existingAttachments.get(spAttachment.uuid)?.id,
+              deletedAt: DateTime.utc().toJSDate(),
+              deletedBy: userXRefID,
+            },
+            userXRefID,
+          }
+        )
       })
     )
 
@@ -129,25 +135,26 @@ export default class SupportingPackageAttachmentService {
       })
       await Promise.all(
         attachments.map(async (attachment) => {
-          return this.#supportingPackagesAttachmentsManager.upsertSupportingPackageAndAttachmentRelationship({
-            supportingPackageAndAttachmentRelationship: {
-              supportingPackageID: parseInt(supportingPackageId),
-              fileID: newAttachments.get(attachment.uuid)?.id,
-              isMaster: attachment.isMaster,
-              deletedAt: null,
-              deletedBy: null,
-            },
-            userXRefID,
-          })
+          return this.#supportingPackagesAttachmentsManager.upsertSupportingPackageAndAttachmentRelationship(
+            {
+              supportingPackageAndAttachmentRelationship: {
+                supportingPackageID: parseInt(supportingPackageId),
+                fileID: newAttachments.get(attachment.uuid)?.id,
+                isMaster: attachment.isMaster,
+                deletedAt: null,
+                deletedBy: null,
+              },
+              userXRefID,
+            }
+          )
         })
       )
     }
 
     const updatedRelationships = await this.getSupportingPackagesAttachmentsBySupportingPackageId({
-      id: supportingPackageId
+      id: supportingPackageId,
     })
 
     return updatedRelationships
   }
-
 }

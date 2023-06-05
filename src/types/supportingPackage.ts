@@ -75,4 +75,6 @@ export interface SupportingPackageAttachmentResponseWithUUID {
   isMaster: boolean
   name: string
   mimeType?: string
+  size: number
+  downloadUrl?: string
 }

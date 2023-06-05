@@ -55,6 +55,7 @@ export async function up(knex: Knex): Promise<void> {
     table.text('mimeType').nullable()
     table.text('location').notNullable()
     table.text('remoteReferenceUuid').nullable()
+    table.bigint('size').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')
@@ -125,8 +126,8 @@ export async function up(knex: Knex): Promise<void> {
       .references('id')
       .inTable('public.supporting_packages_communications')
     table.boolean('isChangeRequest').defaultTo(false)
-    table.string('status',15).nullable,
-    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
+    table.string('status', 15).nullable,
+      table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')
     table.string('createdBy').notNullable()

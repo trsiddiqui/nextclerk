@@ -11,6 +11,7 @@ import {
   getFileFromSharepoint,
   uploadUpdatedFileToSharepoint,
   uploadFileToSharepoint,
+  getViewOnlineLink,
 } from '@/services/sharepoint.service'
 
 const s3 = new S3({
@@ -169,5 +170,23 @@ export class Uploader {
     })
 
     res.send(200)
+  }
+
+  static getFileOpenLinkFromSharepoint = async (req: Request, res: Response): Promise<void> => {
+    const { customerXRefID, fileUUID } = req.params
+    const file = await $FileService.validateAndGetFilesByIds({
+      identifiers: {
+        uuids: [fileUUID],
+      },
+    })
+    const sharingLink = await getViewOnlineLink({
+      customerXRefID,
+      fileName: file.get(fileUUID).name,
+    })
+    if (sharingLink) {
+      res.send(sharingLink)
+    } else {
+      res.status(400)
+    }
   }
 }

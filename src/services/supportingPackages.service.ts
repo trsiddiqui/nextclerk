@@ -27,6 +27,7 @@ import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
+import { getDownloadLink } from './sharepoint.service'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -373,6 +374,7 @@ export default class SupportingPackageService {
           name: attachment.get(file.uuid).name,
           mimeType: attachment.get(file.uuid).mimeType,
           isMaster: file.isMaster ?? false,
+          size: attachment.get(file.uuid).size,
         })),
         userXRefID,
       }
@@ -548,11 +550,13 @@ export default class SupportingPackageService {
       userXRefID,
     })
 
-    await this.#supportingPackageAttachmentService.upsertSupportingPackageAndAttachmentRelationships({
-      supportingPackageId: coreSupportingPackage.id.toString(),
-      attachments: files,
-      userXRefID,
-    })
+    await this.#supportingPackageAttachmentService.upsertSupportingPackageAndAttachmentRelationships(
+      {
+        supportingPackageId: coreSupportingPackage.id.toString(),
+        attachments: files,
+        userXRefID,
+      }
+    )
 
     return this.getSupportingPackage({
       customerXRefID,
@@ -629,6 +633,15 @@ export default class SupportingPackageService {
           id,
         }
       )
+
+    const masterFile = files.find((file) => file.isMaster)
+    if (masterFile) {
+      const downloadLink = await getDownloadLink({
+        customerXRefID,
+        fileName: masterFile.name,
+      })
+      masterFile.downloadUrl = downloadLink
+    }
 
     return {
       uuid,
