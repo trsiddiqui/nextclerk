@@ -494,6 +494,8 @@ export const uploadFileToSharepoint = async (
           folderId: customerFolderId
         }
       })
+    } else {
+      customerFolderId = foundEntity.get(customerXRefID).folderId
     }
 
     const uploadedFile = await uploadFileToSharepointWhenFolderExist({

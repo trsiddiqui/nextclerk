@@ -1,12 +1,13 @@
 import { Knex } from 'knex'
 import { DateTime } from 'luxon'
-import { SupportingPackage, SupportingPackageAttachmentRequest, SupportingPackageAttachmentResponse, SupportingPackageUser } from '../types'
+import { SupportingPackage, SupportingPackageAttachmentRequest, SupportingPackageAttachmentResponse, SupportingPackageAttachmentResponseWithUUID } from '../types'
 import RelationsManager from './relations.model'
 
-export default class SupportingPackagesAttachmentsManager {
+export default class SupportingPackagesAttachmentsManager extends RelationsManager{
   #knex: Knex
 
   constructor(knex: Knex) {
+    super(knex)
     this.#knex = knex
   }
 
@@ -52,5 +53,25 @@ export default class SupportingPackagesAttachmentsManager {
       )
       .returning<SupportingPackageAttachmentResponse[]>('*')
     return relationships
+  }
+
+  public async upsertSupportingPackageAndAttachmentRelationship({
+    supportingPackageAndAttachmentRelationship,
+    userXRefID,
+  }: {
+    supportingPackageAndAttachmentRelationship: Partial<SupportingPackageAttachmentRequest>
+    userXRefID: string
+  }): Promise<SupportingPackageAttachmentResponse> {
+    const relation = await super.upsertRelations<
+      SupportingPackageAttachmentResponse,
+      SupportingPackageAttachmentResponse
+    >({
+      relationEntity: supportingPackageAndAttachmentRelationship,
+      tableName: 'supporting_packages_attachments',
+      keys: ['supportingPackageID', 'fileID'],
+      userXRefID,
+    })
+
+    return relation
   }
 }

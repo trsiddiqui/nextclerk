@@ -477,6 +477,7 @@ export default class SupportingPackageService {
       isDraft,
       date,
       users,
+      files,
     } = supportingPackageRequest
 
     const [label, category, mapUser] = await Promise.all([
@@ -544,6 +545,12 @@ export default class SupportingPackageService {
     await this.#supportingPackagesUsersService.upsertSupportingPackageAndUserRelationship({
       supportingPackageId: coreSupportingPackage.id.toString(),
       users,
+      userXRefID,
+    })
+
+    await this.#supportingPackageAttachmentService.upsertSupportingPackageAndAttachmentRelationships({
+      supportingPackageId: coreSupportingPackage.id.toString(),
+      attachments: files,
       userXRefID,
     })
 
