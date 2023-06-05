@@ -179,7 +179,8 @@ export default class SupportingPackageCommunicationService {
       const {
         uuid,
         text,
-        cellLink,
+        range,
+        sheet,
         isCellLinkValid,
         replyToCommunicationId,
         isChangeRequest,
@@ -233,7 +234,10 @@ export default class SupportingPackageCommunicationService {
       result.push({
         uuid,
         text,
-        cellLink,
+        cellLink: {
+          range,
+          sheet
+        },
         isCellLinkValid,
         replyToCommunicationUUID: replyToCommunicationUUID ?? null ,
         isChangeRequest,
@@ -294,7 +298,8 @@ export default class SupportingPackageCommunicationService {
         supportingPackageAndCommunicationRelationship: {
           uuid,
           text: relation.text,
-          cellLink: relation.cellLink,
+          range: relation.cellLink?.range,
+          sheet: relation.cellLink?.sheet,
           isCellLinkValid: relation.isCellLinkValid,
           isChangeRequest: relation.isChangeRequest,
           status: relation.status,
@@ -312,15 +317,17 @@ export default class SupportingPackageCommunicationService {
         userXRefID,
       })
 
-      await this.#supportingPackagesCommunicationsAttachmentsManager.insertCommunicationAttachments({
-        communications: relation.attachments.map((file) => ({
-          communicationID: insertedCommunication.id,
-          fileID: attachments.get(file).id
-        })),
-        userXRefID,
-      })
+      if (relation.attachments?.length){
+        await this.#supportingPackagesCommunicationsAttachmentsManager.insertCommunicationAttachments({
+          communications: relation.attachments.map((file) => ({
+            communicationID: insertedCommunication.id,
+            fileID: attachments.get(file).id
+          })),
+          userXRefID,
+        })
 
-    }
+      }
+  }
     return this.getSupportingPackageCommunicationsBySupportingPackageId({
       id: supportingPackageId
     })

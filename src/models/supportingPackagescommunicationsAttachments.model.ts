@@ -15,9 +15,9 @@ export default class SupportingPackagesCommunicationsAttachmentsManager {
     userXRefID,
   }: {
     txn?: Knex.Transaction
-    communications: Partial<SupportingPackageCommunicationUser>[]
+    communications: Partial<SupportingPackageCommunicationAttachment>[]
     userXRefID: string
-  }): Promise<SupportingPackageCommunicationUser[]> {
+  }): Promise<SupportingPackageCommunicationAttachment[]> {
     const relations = await this.#knex
       .withSchema('public')
       .table('communications_attachments')
@@ -30,7 +30,7 @@ export default class SupportingPackagesCommunicationsAttachmentsManager {
           updatedBy: userXRefID,
         }))
       )
-      .returning<SupportingPackageCommunicationUser[]>('*')
+      .returning<SupportingPackageCommunicationAttachment[]>('*')
 
     return relations
   }

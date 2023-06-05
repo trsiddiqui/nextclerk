@@ -27,7 +27,7 @@ import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
-import { getDownloadLink } from './sharepoint.service'
+import { getDownloadLink, getMasterFileLinksFromSharepoint } from './sharepoint.service'
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -466,7 +466,7 @@ export default class SupportingPackageService {
   }: {
     customerXRefID: string
     supportingPackageUUID: string
-    supportingPackageRequest: SupportingPackageRequest
+    supportingPackageRequest: Partial<SupportingPackageRequest>
     userXRefID: string
   }): Promise<SupportingPackageResponse> {
     const {
@@ -636,11 +636,11 @@ export default class SupportingPackageService {
 
     const masterFile = files.find((file) => file.isMaster)
     if (masterFile) {
-      const downloadLink = await getDownloadLink({
-        customerXRefID,
-        fileName: masterFile.name,
+      const downloadLink = await getMasterFileLinksFromSharepoint({
+        customerFolderId: entity.get(customerXRefID).folderId,
+        fileName: `${masterFile.uuid}.xlsx`,
       })
-      masterFile.downloadUrl = downloadLink
+      masterFile.downloadUrl = downloadLink['@microsoft.graph.downloadUrl']
     }
 
     return {
