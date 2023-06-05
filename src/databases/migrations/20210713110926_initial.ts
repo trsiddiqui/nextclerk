@@ -118,7 +118,8 @@ export async function up(knex: Knex): Promise<void> {
       .notNullable()
       .references('id')
       .inTable('public.supporting_packages')
-    table.string('cellLink')
+    table.string('range')
+    table.string('sheet')
     table.boolean('isCellLinkValid')
     table.text('text').notNullable()
     table

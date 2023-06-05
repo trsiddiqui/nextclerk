@@ -16,11 +16,21 @@ export interface SupportingPackageCommunication extends EntityDateWithArchive {
   uuid: string
   supportingPackageID: number
   text: string
-  cellLink: string
+  cellLink: CellLink
   isCellLinkValid: boolean
   replyToCommunicationId: number
   isChangeRequest: boolean
   status: CommunicationStatus
+}
+
+export type ExpandedSupportingPackageCommunication = Omit<SupportingPackageCommunication, 'cellLink'> & {
+  range: string
+  sheet: string
+}
+
+export interface CellLink {
+  range: string
+  sheet: string
 }
 
 export enum CommunicationStatus {

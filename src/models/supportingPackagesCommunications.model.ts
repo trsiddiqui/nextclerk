@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 import { DateTime } from 'luxon'
-import { SupportingPackage, SupportingPackageCommunication, SupportingPackageCommunicationRequest, SupportingPackageCommunicationResponse, SupportingPackageUser } from '../types'
+import { ExpandedSupportingPackageCommunication, SupportingPackage, SupportingPackageCommunication, SupportingPackageCommunicationRequest, SupportingPackageCommunicationResponse, SupportingPackageUser } from '../types'
 import RelationsManager from './relations.model'
 
 export default class SupportingPackagesCommunicationsManager extends RelationsManager {
@@ -17,11 +17,11 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
   }: {
     txn?: Knex.Transaction
     id: number
-  }): Promise<SupportingPackageCommunication[]> {
+  }): Promise<ExpandedSupportingPackageCommunication[]> {
     let query = this.#knex
       .withSchema('public')
       .table('supporting_packages_communications')
-      .select<SupportingPackageCommunication[]>('*')
+      .select<ExpandedSupportingPackageCommunication[]>('*')
       .where('supportingPackageID', id)
 
     if (txn) {
@@ -85,10 +85,10 @@ export default class SupportingPackagesCommunicationsManager extends RelationsMa
     userXRefID,
 
   }: {
-    supportingPackageAndCommunicationRelationship: Partial<SupportingPackageCommunication>
+    supportingPackageAndCommunicationRelationship: Partial<ExpandedSupportingPackageCommunication>
     supportingPackageID: number
     userXRefID: string
-  }): Promise<SupportingPackageCommunication> {
+  }): Promise<ExpandedSupportingPackageCommunication> {
     let query = this.#knex
       .withSchema('public')
       .table('supporting_packages_communications')
