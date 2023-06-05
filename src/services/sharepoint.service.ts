@@ -12,18 +12,14 @@ import { File, FileRequest } from '@/types'
 
 // TODO: Refactor this
 // Use S3 service to get from S3 and then call uploadToSharepoint to store in sharepoint
-export const getFromS3AndStoreInSharepoint = async ({
-  s3,
+export const setExistingFileAsMaster = async ({
   customerXRefID,
-  bucketName,
   fileUUID,
 }: {
-  s3: S3
   customerXRefID: string
-  bucketName: string
   fileUUID: string
-}): Promise<any> => {
-  const entity = await $EntityService.validateAndGetEntities({
+}): Promise< { '@microsoft.graph.downloadUrl': string, sharingLink: string }> => {
+  const entities = await $EntityService.validateAndGetEntities({
     identifiers: {
       uuids: [customerXRefID],
     },
@@ -34,42 +30,76 @@ export const getFromS3AndStoreInSharepoint = async ({
       uuids: [fileUUID],
     },
   })
-  const bucketStatus = await checkBucket(s3, bucketName)
-  if (!bucketStatus.success) {
-    throw Error(`Error in reading from bucket for Customer ${entity.get(customerXRefID).name}`)
-  }
 
   const fileName = `${fileUUID}.xlsx`
 
-  const filesInBucket = await s3
-    .listObjectsV2({
-      Bucket: bucketName,
-    })
-    .promise()
-
-  console.log(filesInBucket)
-
-  const params = { Bucket: bucketName, Key: `${customerXRefID}/${fileName}` }
-
-  const content = await s3.getObject(params).promise()
-  const dir = __dirname + `/../nextclerk-tmp`
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir)
-  }
-
-  fs.writeFile(`${dir}/${fileName}`, content.Body as NodeJS.ArrayBufferView, (err) => {
-    if (err) {
-      console.log(err)
-      throw Error('error on creating temp file')
-    }
-  })
-
-  const urlObject = await uploadToSharepointAndGetLinks({
-    dir,
-    customerXRefID,
+  const urlObject = await getMasterFileLinksFromSharepoint({
+    customerFolderId: entities.get(customerXRefID).folderId,
     fileName,
   })
   return urlObject
+}
+
+export const getMasterFileLinksFromSharepoint = async({
+  customerFolderId,
+  fileName
+}:{
+  customerFolderId: string
+  fileName: string
+}): Promise< { '@microsoft.graph.downloadUrl': string, sharingLink: string }> => {
+  let sharedFilePath
+  try {
+    const accessToken = await getAccessToken()
+    // get folder id and file name
+    const masterFile = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}?select=id`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+    console.log(masterFile.data)
+    const masterFileId = masterFile.data.id
+
+    if (!masterFile) {
+      throw Error('File does not exist on sharepoint.')
+    }
+    const fileWebUrl = await axios.get(
+      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${masterFileId}?select=@microsoft.graph.downloadUrl`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+    sharedFilePath = fileWebUrl.data
+    const sharingLinkResp = (
+      await axios.post(
+        `https://graph.microsoft.com/v1.0/Drives/${DRIVE_ID}/Items/${masterFileId}/createLink`,
+        {
+          type: 'edit',
+          scope: 'anonymous',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).data
+    sharedFilePath['sharingLink'] = sharingLinkResp.link.webUrl
+
+  } catch (err) {
+    console.error(
+      err.response.status,
+      err.response.data.error.code,
+      err.response.data.error.message
+    )
+  }
+
+
+  return sharedFilePath
 }
 
 export const getFileFromSharepoint = async ({
@@ -519,7 +549,7 @@ export const uploadFileToSharepoint = async (
        success: true,
        message: 'File Uploaded Successfully',
        data: {
-         ...uploadedFile,
+         ...uploadedFileObject,
          customerXRefID,
        },
      }

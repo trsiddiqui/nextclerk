@@ -6,7 +6,7 @@ import { uploadToS3, uploadUpdatedFileToS3 } from '../../services/S3.service'
 import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } from '@/config'
 import { $FileService } from '@/services'
 import {
-  getFromS3AndStoreInSharepoint,
+  setExistingFileAsMaster,
   createMasterFileInSharepoint,
   getFileFromSharepoint,
   uploadUpdatedFileToSharepoint,
@@ -86,19 +86,12 @@ export class Uploader {
   static chooseMasterFile = async (req: Request, res: any): Promise<void> => {
     const { customerXRefID, fileUUID } = req.params
 
-    const s3 = new S3({
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-    })
-
-    const copiedFileAddress = await getFromS3AndStoreInSharepoint({
-      s3,
+    const fileAddress = await setExistingFileAsMaster({
       customerXRefID,
-      bucketName: `supporting-packages`,
       fileUUID,
     })
-    if (copiedFileAddress) {
-      res.status(200).json(copiedFileAddress)
+    if (fileAddress) {
+      res.status(200).json(fileAddress)
     } else {
       res.status(400)
     }
