@@ -426,6 +426,7 @@ export default class SupportingPackageService {
       isChangeRequest,
       attachments,
       users,
+      status,
     } = communication
 
     const [supportingPackage] = await Promise.all([
@@ -448,6 +449,7 @@ export default class SupportingPackageService {
               isChangeRequest,
               attachments,
               users,
+              status,
             },
           ],
           supportingPackageId: supportingPackage.get(supportingPackageUUID).id,
