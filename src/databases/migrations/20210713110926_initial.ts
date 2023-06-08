@@ -102,6 +102,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('name')
     table.string('mimeType')
     table.integer('size')
+    table.jsonb('highLights').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('deleteAt')
