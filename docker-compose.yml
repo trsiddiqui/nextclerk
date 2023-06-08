@@ -11,26 +11,26 @@ services:
   #   restart: 'unless-stopped'
   #   networks:
   #     - backend
-  server:
-    build:
-      context: ./
-      target: production-build-stage
-      dockerfile: ./Dockerfile
-    container_name: server
-    ports:
-      - '3000:3000'
-    volumes:
-      - ./:/app
-      - /app/node_modules
-    restart: on-failure
-    networks:
-      - backend
-    links:
-      - postgres
-    depends_on:
-      - postgres
-      - redis
-      - spreadsheet-api-service
+  # server:
+  #   build:
+  #     context: ./
+  #     target: production-build-stage
+  #     dockerfile: ./Dockerfile
+  #   container_name: server
+  #   ports:
+  #     - '3000:3000'
+  #   volumes:
+  #     - ./:/app
+  #     - /app/node_modules
+  #   restart: on-failure
+  #   networks:
+  #     - backend
+  #   links:
+  #     - postgres
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - spreadsheet-api-service
   postgres:
     restart: always
     image: postgres:13-buster
