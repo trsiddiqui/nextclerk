@@ -74,6 +74,9 @@ class App {
   }
 
   private initializeRoutes() {
+    this.app.get('/api/ping', (_req, res) => {
+      res.send(200)
+    })
     this.app.use('/api', supportingPackageRoutes)
     this.app.use('/api', genericRoutes)
     this.app.use('/api/global', fileRoutes)
