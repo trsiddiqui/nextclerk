@@ -48,6 +48,7 @@ export default class SupportingPackageAttachmentService {
     const supportingPackageFiles = supportingPackagesAttachmentsRecords.map((spf) => ({
       uuid: files.get(spf.fileID.toString()).uuid,
       isMaster: spf.isMaster,
+      highLights: spf.highLights,
       name: spf.name,
       mimeType: spf.mimeType,
       size: spf.size,
@@ -75,6 +76,7 @@ export default class SupportingPackageAttachmentService {
           fileID: relationship.fileID,
           mimeType: relationship.mimeType,
           name: relationship.name,
+          highLights: relationship.highLights,
           isMaster: relationship.isMaster,
           size: relationship.size,
         })),

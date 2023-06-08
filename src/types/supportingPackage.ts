@@ -24,6 +24,7 @@ export interface SupportingPackageRequest {
 export interface supportingPackageFile {
   uuid: string
   isMaster?: boolean
+  highLights?: object
 }
 
 export interface SupportingPackage extends EntityDate {
@@ -65,6 +66,7 @@ export interface SupportingPackageAttachmentResponse extends EntityDateWithDelet
   fileID: number
   name: string
   mimeType?: string
+  highLights?: object
   size: number
   isMaster: boolean
 }
@@ -73,6 +75,7 @@ export type SupportingPackageAttachmentRequest = Omit<SupportingPackageAttachmen
 export interface SupportingPackageAttachmentResponseWithUUID {
   uuid: string
   isMaster: boolean
+  highLights?: object
   name: string
   mimeType?: string
   size: number

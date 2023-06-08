@@ -374,6 +374,7 @@ export default class SupportingPackageService {
           name: attachment.get(file.uuid).name,
           mimeType: attachment.get(file.uuid).mimeType,
           isMaster: file.isMaster ?? false,
+          highLights: file.highLights ?? null,
           size: attachment.get(file.uuid).size,
         })),
         userXRefID,
