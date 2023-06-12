@@ -1,8 +1,5 @@
 import { S3 } from 'aws-sdk'
 import { Request, Response } from 'express'
-import fs from 'fs'
-
-import { uploadToS3, uploadUpdatedFileToS3 } from '../../services/S3.service'
 import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } from '@/config'
 import { $FileService } from '@/services'
 import {
@@ -13,11 +10,12 @@ import {
   uploadFileToSharepoint,
   getViewOnlineLink,
 } from '@/services/sharepoint.service'
+import path from 'path'
 
-const s3 = new S3({
-  accessKeyId: AWS_ACCESS_KEY_ID,
-  secretAccessKey: AWS_SECRET_ACCESS_KEY,
-})
+// const s3 = new S3({
+//   accessKeyId: AWS_ACCESS_KEY_ID,
+//   secretAccessKey: AWS_SECRET_ACCESS_KEY,
+// })
 
 // TODO: Use the file middleware native export to s3
 
@@ -37,31 +35,31 @@ export type UploadedFileProps = {
 }
 
 export class Uploader {
-  static Upload = async (req: Request, res: any) => {
-    const { customerXRefID } = req.params
+  // static Upload = async (req: Request, res: any) => {
+  //   const { customerXRefID } = req.params
 
-    // TODO: Also store this file in db with entityID
-    // Initialize bucket
-    // await initBucket(s3, BUCKET_NAME)
+  //   // TODO: Also store this file in db with entityID
+  //   // Initialize bucket
+  //   // await initBucket(s3, BUCKET_NAME)
 
-    // get file data through req.file thank to multer
-    console.log('file object', req.file)
+  //   // get file data through req.file thank to multer
+  //   console.log('file object', req.file)
 
-    const uploadRes = await uploadToS3(s3, customerXRefID, req.file)
+  //   const uploadRes = await uploadToS3(s3, customerXRefID, req.file)
 
-    const uploadedFile = {
-      mimetype: req.file.mimetype,
-      originalname: req.file.originalname,
-      size: req.file.size,
-      uploaded: uploadRes.data,
-    }
+  //   const uploadedFile = {
+  //     mimetype: req.file.mimetype,
+  //     originalname: req.file.originalname,
+  //     size: req.file.size,
+  //     uploaded: uploadRes.data,
+  //   }
 
-    if (uploadRes.success) {
-      res.status(200).json(uploadedFile)
-    } else {
-      res.status(400).json(uploadRes)
-    }
-  }
+  //   if (uploadRes.success) {
+  //     res.status(200).json(uploadedFile)
+  //   } else {
+  //     res.status(400).json(uploadRes)
+  //   }
+  // }
 
   static uploadToSharepoint = async (req: Request, res: any) => {
     const { customerXRefID } = req.params
@@ -134,39 +132,37 @@ export class Uploader {
 
   static updateContentsOfFile = async (req: Request, res: Response) => {
     const { customerXRefID, fileUUID } = req.params
+    // get file data through req.file thank to multer
+    console.log('file object', req.file)
 
     const files = await $FileService.validateAndGetFilesByIds({
       identifiers: {
         uuids: [fileUUID],
       },
     })
-
-    const currentFile = files.get(fileUUID)
+    const extension = path.extname(files.get(fileUUID).name)
+    const fileName = `${fileUUID}${extension}`
 
     // TODO: Also store this file in db with entityID
     // Initialize bucket
     // await initBucket(s3, BUCKET_NAME)
 
-    // get file data through req.file thank to multer
-    console.log('file object', req.file)
+    // await uploadUpdatedFileToS3(s3, customerXRefID, req.file, currentFile.uuid)
 
-    await uploadUpdatedFileToS3(s3, customerXRefID, req.file, currentFile.uuid)
+    // const fileName = `${fileUUID}.xlsx`
+    // const params = { Bucket: `supporting-packages`, Key: `${customerXRefID}/${fileName}` }
 
-    const fileName = `${fileUUID}.xlsx`
-    const params = { Bucket: `supporting-packages`, Key: `${customerXRefID}/${fileName}` }
+   //  const content = await s3.getObject(params).promise()
+    // const dir = __dirname + `/../../nextclerk-tmp`
+    // if (!fs.existsSync(dir)) {
+    //   fs.mkdirSync(dir)
+    // }
 
-    const content = await s3.getObject(params).promise()
-    const dir = __dirname + `/../../nextclerk-tmp`
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir)
-    }
-
-    fs.writeFileSync(`${dir}/${fileName}`, content.Body as NodeJS.ArrayBufferView)
+    // fs.writeFileSync(`${dir}/${fileName}`, req.file.buffer)
     await uploadUpdatedFileToSharepoint({
       customerXRefID,
-      dir,
       fileName,
-      fileUUID,
+      file: req.file
     })
 
     res.send(200)
@@ -179,9 +175,11 @@ export class Uploader {
         uuids: [fileUUID],
       },
     })
+    const extension = path.extname(file.get(fileUUID).name)
+    const uuidFileWithExtension = `${fileUUID}${extension}`
     const sharingLink = await getViewOnlineLink({
       customerXRefID,
-      fileName: file.get(fileUUID).name,
+      fileName: uuidFileWithExtension,
     })
     if (sharingLink) {
       res.send(sharingLink)

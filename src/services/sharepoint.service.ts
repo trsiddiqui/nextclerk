@@ -419,75 +419,84 @@ export const isFileExistInSharepoint = async ({
 }
 
 export const uploadUpdatedFileToSharepoint = async ({
-  dir,
   customerXRefID,
   fileName,
-  fileUUID,
+  file,
 }: {
-  dir: string
   customerXRefID: string
   fileName: string
-  fileUUID: string
+  file: Express.Multer.File
 }): Promise<{ '@microsoft.graph.downloadUrl': string; sharingLink: string }> => {
   let sharedFilePath
+
+  const foundEntity = await $EntityService.validateAndGetEntities({
+    identifiers: {
+      uuids: [customerXRefID],
+    },
+  })
 
   const accessToken = await getAccessToken()
 
   console.log('got token', accessToken)
 
   // Check if customer folder exists
-  const customers = (
-    await axios.get(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-  ).data.value
+  // const customers = (
+  //   await axios.get(
+  //     `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //     }
+  //   )
+  // ).data.value
 
-  console.log('customers', JSON.stringify(customers, null, 2))
+  // console.log('customers', JSON.stringify(customers, null, 2))
 
-  // TODO: Store customer folder ID so that we dont have to do these calls
-  let customerFolderId
-  if (customers.some((customer) => customer.name === customerXRefID)) {
-    customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
-  } else {
-    const customerFolderCreated = await axios.post(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
-      {
-        name: customerXRefID,
-        folder: {},
-        '@microsoft.graph.conflictBehavior': 'fail',
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
+  // // TODO: Store customer folder ID so that we dont have to do these calls
+  // let customerFolderId
+  // if (customers.some((customer) => customer.name === customerXRefID)) {
+  //   customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
+  // } else {
+  //   const customerFolderCreated = await axios.post(
+  //     `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+  //     {
+  //       name: customerXRefID,
+  //       folder: {},
+  //       '@microsoft.graph.conflictBehavior': 'fail',
+  //     },
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //     }
+  //   )
 
-    // console.log('customerFolderCreated', JSON.stringify(customerFolderCreated, null, 2))
-    customerFolderId = customerFolderCreated.data.id
-  }
+  //   // console.log('customerFolderCreated', JSON.stringify(customerFolderCreated, null, 2))
+  //   customerFolderId = customerFolderCreated.data.id
+  // }
+  const customerFolderId = foundEntity.get(customerXRefID).folderId
   console.log('customerFolderId', customerFolderId)
-  const fileBuffer = fs.readFileSync(`${dir}/${fileName}`)
-  if (fileUUID) {
-    fileName = `${fileUUID}.xlsx`
-  }
+  const fileBuffer = file.buffer
+
+  await uploadFileToSharepointWhenFolderExist({
+    accessToken,
+    customerFolderId,
+    fileName,
+    fileBuffer
+  })
 
   // check file exist
 
-  await axios.put(
-    `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}:/content`,
-    fileBuffer,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  )
+  // await axios.put(
+  //   `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${customerFolderId}:/${fileName}:/content`,
+  //   fileBuffer,
+  //   {
+  //     headers: {
+  //       Authorization: `Bearer ${accessToken}`,
+  //     },
+  //   }
+  // )
   // sharedFilePath = sharingLinkResp.link.webUrl
   return sharedFilePath
 }
@@ -624,7 +633,6 @@ export const uploadFileToSharepointWhenFolderExist = async ({
   accessToken: string
 }): Promise<{ '@microsoft.graph.downloadUrl': string; sharingLink: string }> => {
   let sharedFilePath
-  console.log('MAJID', fileName)
 
   try {
     console.log('got token', accessToken)
@@ -685,42 +693,49 @@ export const getViewOnlineLink = async ({
 
   console.log('got token', accessToken)
 
+  const foundEntity = await $EntityService.validateAndGetEntities({
+    identifiers: {
+      uuids: [customerXRefID],
+    },
+  })
+
   // Check if customer folder exists
-  const customers = (
-    await axios.get(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-  ).data.value
+  // const customers = (
+  //   await axios.get(
+  //     `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //     }
+  //   )
+  // ).data.value
 
-  console.log('customers', JSON.stringify(customers, null, 2))
+  // console.log('customers', JSON.stringify(customers, null, 2))
 
-  // TODO: Store customer folder ID so that we dont have to do these calls
-  let customerFolderId
-  if (customers.some((customer) => customer.name === customerXRefID)) {
-    customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
-  } else {
-    const customerFolderCreated = await axios.post(
-      `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
-      {
-        name: customerXRefID,
-        folder: {},
-        '@microsoft.graph.conflictBehavior': 'fail',
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
+  // // TODO: Store customer folder ID so that we dont have to do these calls
+  // let customerFolderId
+  // if (customers.some((customer) => customer.name === customerXRefID)) {
+  //   customerFolderId = customers.find((customer) => customer.name === customerXRefID).id
+  // } else {
+  //   const customerFolderCreated = await axios.post(
+  //     `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root:/Customers:/children`,
+  //     {
+  //       name: customerXRefID,
+  //       folder: {},
+  //       '@microsoft.graph.conflictBehavior': 'fail',
+  //     },
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //     }
+  //   )
 
-    // console.log('customerFolderCreated', JSON.stringify(customerFolderCreated, null, 2))
-    customerFolderId = customerFolderCreated.data.id
-  }
+  //   // console.log('customerFolderCreated', JSON.stringify(customerFolderCreated, null, 2))
+  //   customerFolderId = customerFolderCreated.data.id
+  // }
+  const customerFolderId = foundEntity.get(customerXRefID).folderId
   console.log('customerFolderId', customerFolderId)
 
   const masterFile = await axios.get(
