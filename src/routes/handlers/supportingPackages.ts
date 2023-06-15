@@ -6,6 +6,7 @@ import {
   $SupportingPackageService,
 } from '../../services'
 import { SupportingPackageCommunicationRequest, SupportingPackageRequest } from '@/types'
+import { JERequestBody, JournalEntryRequest } from '@/types/journalEntries'
 
 export const createLineItemsSheet = async (
   req: Request,
@@ -233,3 +234,93 @@ export const getCategories = async (
     next(error)
   }
 }
+
+export const createJournalEntries = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { customerXRefID, supportingPackageUUID } = req.params
+    const { journalEntryLines } = req.body
+
+    const journalEntryLinesResponse =
+      await $SupportingPackageService.createSupportingPackageJournalEntries({
+        journalEntryLines,
+        customerXRefID,
+        supportingPackageUUID,
+        userXRefID: 'testUser',
+      })
+
+    res.status(201).json(journalEntryLinesResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const updateJournalEntries = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { customerXRefID, supportingPackageUUID } = req.params
+    const { journalEntryLines } = req.body
+
+    const journalEntryLinesResponse =
+      await $SupportingPackageService.updateSupportingPackageJournalEntries({
+        journalEntryLines,
+        customerXRefID,
+        supportingPackageUUID,
+        userXRefID: 'testUser',
+      })
+
+    res.status(200).json(journalEntryLinesResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const deleteJournalEntries = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { customerXRefID, supportingPackageUUID } = req.params
+    const { journalEntryLines } = req.body
+
+    const journalEntryLinesResponse =
+      await $SupportingPackageService.deleteSupportingPackageJournalEntries({
+        journalEntryLines,
+        customerXRefID,
+        supportingPackageUUID,
+        userXRefID: 'testUser',
+      })
+
+    res.status(204).json(journalEntryLinesResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getJournalEntries = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { supportingPackageUUID } = req.params
+
+    const journalEntryLinesResponse =
+      await $SupportingPackageService.getJournalEntryBySupportingPackageId({
+        supportingPackageUUID,
+      })
+
+    res.status(200).json(journalEntryLinesResponse)
+  } catch (error) {
+    next(error)
+  }
+}
+
+

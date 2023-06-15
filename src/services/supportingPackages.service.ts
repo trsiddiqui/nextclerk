@@ -8,7 +8,7 @@ import {
   SupportingPackageResponse,
 } from '../types/supportingPackage'
 import { HttpException } from '../exceptions/HttpException'
-import { SupportingPackagesManager, SupportingPackagesUsersManager } from '../models'
+import { JournalEntriesManager, SupportingPackagesManager, SupportingPackagesUsersManager } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
 import EntityService from './entities.service'
@@ -22,12 +22,23 @@ import {
   Label,
   SupportingPackageCommunicationRequest,
   SupportingPackageCommunicationResponse,
+  JournalEntry,
+  JournalEntryRequest,
+  JournalEntryResponse,
+  JournalEntryWithoutID,
+  JournalEntryRequestWithUUID
 } from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
-import { getDownloadLink, getMasterFileLinksFromSharepoint } from './sharepoint.service'
+import { getMasterFileLinksFromSharepoint } from './sharepoint.service'
+import AccountService from './accounts.service'
+import DepartmentService from './departments.service'
+import LocationService from './locations.service'
+import CustomerService from './customers.service'
+
+
 
 export default class SupportingPackageService {
   #supportingPackagesManager: SupportingPackagesManager
@@ -48,6 +59,16 @@ export default class SupportingPackageService {
 
   #supportingPackageCommunicationService: SupportingPackageCommunicationService
 
+  #accountService: AccountService
+
+  #departmentService: DepartmentService
+
+  #locationService: LocationService
+
+  #customerService: CustomerService
+
+  #journalEntriesManager: JournalEntriesManager
+
   constructor({
     supportingPackagesManager,
     categoryService,
@@ -58,6 +79,11 @@ export default class SupportingPackageService {
     supportingPackagesUsersService,
     supportingPackageAttachmentService,
     supportingPackageCommunicationService,
+    accountService,
+    departmentService,
+    locationService,
+    customerService,
+    journalEntriesManager
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
@@ -68,6 +94,11 @@ export default class SupportingPackageService {
     supportingPackagesUsersService: SupportingPackageUserService
     supportingPackageAttachmentService: SupportingPackageAttachmentService
     supportingPackageCommunicationService: SupportingPackageCommunicationService
+    accountService: AccountService
+    departmentService: DepartmentService
+    locationService: LocationService
+    customerService: CustomerService
+    journalEntriesManager: JournalEntriesManager
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
@@ -78,6 +109,11 @@ export default class SupportingPackageService {
     this.#supportingPackagesUsersService = supportingPackagesUsersService
     this.#supportingPackageAttachmentService = supportingPackageAttachmentService
     this.#supportingPackageCommunicationService = supportingPackageCommunicationService
+    this.#accountService = accountService
+    this.#departmentService = departmentService
+    this.#locationService = locationService
+    this.#customerService = customerService
+    this.#journalEntriesManager = journalEntriesManager
   }
 
   public async validateAndGetSupportingPackages({
@@ -668,6 +704,293 @@ export default class SupportingPackageService {
       updatedBy,
       communications,
     }
+  }
+
+  public async getJournalEntryBySupportingPackageId({
+    supportingPackageUUID,
+  }: {
+    supportingPackageUUID: string,
+  }) : Promise<JournalEntryResponse[]> {
+    const supportingPackage = await this.validateAndGetSupportingPackages({
+      identifiers: {
+        uuids: [supportingPackageUUID]
+      }
+    })
+    const supportingPackageId = supportingPackage.get(supportingPackageUUID).id
+
+    const journalEntryLines = await this.#journalEntriesManager.getAllJournalEntryLinesBySupportingPackageIDs({
+      ids: [supportingPackageId.toString()]
+    })
+    return journalEntryLines
+  }
+
+  public async createSupportingPackageJournalEntries({
+    customerXRefID,
+    supportingPackageUUID,
+    journalEntryLines,
+    userXRefID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+    journalEntryLines: JournalEntryRequest[]
+    userXRefID: string
+  }): Promise<JournalEntryResponse[]> {
+    await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+    const supportingPackage = await this.validateAndGetSupportingPackages({
+      identifiers: {
+        uuids: [supportingPackageUUID]
+      }
+    })
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    if (journalEntryLines.length === 0) {
+      throw new HttpException(400, 'Journal entry is empty')
+    }
+
+    for (const journalEntry of journalEntryLines) {
+      const {
+        accountUUID,
+        departmentUUID,
+        locationUUID,
+        customerUUID,
+        amount,
+        memo,
+        referenceCode,
+        type
+      } = journalEntry
+
+      let accountID, departmentID, locationID, customerID
+
+      const account = await this.#accountService.validateAndGetAccounts({
+          identifiers: {
+            uuids: [accountUUID],
+          },
+        })
+      accountID = account.get(accountUUID).id
+
+      if (departmentUUID) {
+        const department = await this.#departmentService.validateAndGetDepartments({
+          identifiers: {
+            uuids: [departmentUUID]
+          }
+        })
+        departmentID = department.get(departmentUUID).id
+      }
+
+      if (locationUUID) {
+        const location = await this.#locationService.validateAndGetLocations({
+          identifiers: {
+            uuids: [locationUUID]
+          }
+        })
+        locationID = location.get(locationUUID).id
+      }
+
+      if (customerUUID) {
+        const customer = await this.#customerService.validateAndGetCustomers({
+          identifiers: {
+            uuids: [customerUUID]
+          }
+        })
+        customerID = customer.get(customerUUID).id
+      }
+      const uuid = v4()
+      const journalEntryObject : JournalEntryWithoutID = {
+        uuid,
+        amount,
+        type,
+        memo,
+        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+        accountID,
+        customerID,
+        departmentID,
+        locationID,
+        referenceCode
+      }
+
+      await this.#journalEntriesManager.createJournalEntryLine({
+        JournalEntry: journalEntryObject,
+        userXRefID
+      })
+
+    }
+
+    const response = await this.getJournalEntryBySupportingPackageId({
+      supportingPackageUUID
+    })
+
+    return response
+  }
+
+  public async updateSupportingPackageJournalEntries({
+    customerXRefID,
+    supportingPackageUUID,
+    journalEntryLines,
+    userXRefID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+    journalEntryLines: JournalEntryRequestWithUUID[]
+    userXRefID: string
+  }): Promise<JournalEntryResponse[]> {
+    await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+    const supportingPackage = await this.validateAndGetSupportingPackages({
+      identifiers: {
+        uuids: [supportingPackageUUID]
+      }
+    })
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    if (journalEntryLines.length === 0) {
+      throw new HttpException(400, 'Journal entry is empty')
+    }
+
+    for (const journalEntry of journalEntryLines) {
+      const {
+        uuid,
+        accountUUID,
+        departmentUUID,
+        locationUUID,
+        customerUUID,
+        amount,
+        memo,
+        referenceCode,
+        type
+      } = journalEntry
+
+      if(!uuid) {
+        throw new HttpException(400, 'Journal entry line without UUID can not updated')
+      }
+
+      const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
+        uuid
+      })
+      if(!foundedJournalEntryLine) {
+        throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
+      }
+
+      let accountID, departmentID, locationID, customerID
+
+      const account = await this.#accountService.validateAndGetAccounts({
+          identifiers: {
+            uuids: [accountUUID],
+          },
+        })
+      accountID = account.get(accountUUID).id
+
+      if (departmentUUID) {
+        const department = await this.#departmentService.validateAndGetDepartments({
+          identifiers: {
+            uuids: [departmentUUID]
+          }
+        })
+        departmentID = department.get(departmentUUID).id
+      }
+
+      if (locationUUID) {
+        const location = await this.#locationService.validateAndGetLocations({
+          identifiers: {
+            uuids: [locationUUID]
+          }
+        })
+        locationID = location.get(locationUUID).id
+      }
+
+      if (customerUUID) {
+        const customer = await this.#customerService.validateAndGetCustomers({
+          identifiers: {
+            uuids: [customerUUID]
+          }
+        })
+        customerID = customer.get(customerUUID).id
+      }
+      const journalEntryObject : JournalEntryWithoutID = {
+        uuid,
+        amount,
+        type,
+        memo,
+        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+        accountID,
+        customerID,
+        departmentID,
+        locationID,
+        referenceCode
+      }
+
+      await this.#journalEntriesManager.updateJournalEntryLine({
+        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+        identifier: { JournalEntryUUID: uuid},
+        journalEntryLine: journalEntryObject,
+        userXRefID,
+      })
+
+    }
+
+    const response = await this.getJournalEntryBySupportingPackageId({
+      supportingPackageUUID
+    })
+
+    return response
+  }
+
+  public async deleteSupportingPackageJournalEntries({
+    customerXRefID,
+    supportingPackageUUID,
+    journalEntryLines,
+    userXRefID,
+  }: {
+    customerXRefID: string
+    supportingPackageUUID: string
+    journalEntryLines: JournalEntryRequestWithUUID[]
+    userXRefID: string
+  }): Promise<JournalEntryResponse[]> {
+    await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+    const supportingPackage = await this.validateAndGetSupportingPackages({
+      identifiers: {
+        uuids: [supportingPackageUUID]
+      }
+    })
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    if (journalEntryLines.length === 0) {
+      throw new HttpException(400, 'Journal entry is empty')
+    }
+
+    for (const journalEntry of journalEntryLines) {
+      const {
+        uuid
+      } = journalEntry
+
+      if(!uuid) {
+        throw new HttpException(400, 'Journal entry line without UUID can not deleted')
+      }
+
+      const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
+        uuid
+      })
+      if(!foundedJournalEntryLine) {
+        throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
+      }
+
+
+      await this.#journalEntriesManager.deleteJournalEntryLine({
+        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+        identifier: { JournalEntryUUID: uuid},
+        userXRefID,
+      })
+    }
+
+    const response = await this.getJournalEntryBySupportingPackageId({
+      supportingPackageUUID
+    })
+
+    return response
   }
 
   // public async updateSupportingPackage(userId: number, userData: SupportingPackage): Promise<SupportingPackage> {

@@ -280,6 +280,30 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('refreshTokenExpiry').nullable()
     table.unique(['applicationID'])
   })
+
+  await knex.schema.createTable('journal_entry_details', (table) => {
+    table.bigIncrements('id').notNullable().primary()
+    table.uuid('uuid').notNullable()
+    table
+      .bigInteger('supportingPackageID')
+      .notNullable()
+      .references('id')
+      .inTable('public.supporting_packages')
+    table.bigInteger('accountID').notNullable().references('id').inTable('public.accounts')
+    table.bigInteger('departmentID').references('id').inTable('public.departments')
+    table.bigInteger('locationID').references('id').inTable('public.locations')
+    table.bigInteger('customerID').references('id').inTable('public.customers')
+    table.string('referenceCode')
+    table.string('type', 10).notNullable()
+    table.text('memo')
+    table.float('amount').notNullable()
+    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('deletedAt')
+    table.string('createdBy').notNullable()
+    table.string('updatedBy').notNullable()
+    table.string('deletedBy')
+  })
 }
 
 export async function down(knex: Knex): Promise<void> {

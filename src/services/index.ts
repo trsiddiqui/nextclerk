@@ -15,6 +15,7 @@ import {
   $SupportingPackagesCommunicationsManager,
   $SupportingPackagesCommunicationsAttachmentsManager,
   $SupportingPackagesCommunicationsUsersManager,
+  $JournalEntriesManager,
 } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
@@ -110,5 +111,11 @@ export const $SupportingPackageService = new SupportingPackageService({
   fileService: $FileService,
   supportingPackageAttachmentService: $SupportingPackageAttachmentService,
   supportingPackagesUsersService: $SupportingPackageUserService,
-  supportingPackageCommunicationService: $SupportingPackageCommunicationService
+  supportingPackageCommunicationService: $SupportingPackageCommunicationService,
+  accountService: $AccountService,
+  departmentService: $DepartmentService,
+  locationService: $LocationService,
+  customerService: $CustomerService,
+  journalEntriesManager: $JournalEntriesManager
+
 })

@@ -8,6 +8,10 @@ import {
   getSupportingPackage,
   createSupportingPackageCommunication,
   getSupportingPackageCommunicationByCommunicationUUID,
+  createJournalEntries,
+  getJournalEntries,
+  updateJournalEntries,
+  deleteJournalEntries,
 } from '../routes/handlers/supportingPackages'
 
 const router = Router()
@@ -29,6 +33,14 @@ router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, update
 router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, getSupportingPackage)
 router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications`, createSupportingPackageCommunication)
 router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications/:communicationUUID`, getSupportingPackageCommunicationByCommunicationUUID)
+
+// JE
+router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, createJournalEntries)
+router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, updateJournalEntries)
+router.delete(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, deleteJournalEntries)
+router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, getJournalEntries)
+
+
 
 
 // this.router.use(

@@ -15,6 +15,7 @@ import SupportingPackagesAttachmentsManager from './supportingPackagesAttachment
 import SupportingPackagesCommunicationsManager from './supportingPackagesCommunications.model'
 import SupportingPackagesCommunicationsAttachmentsManager from './supportingPackagescommunicationsAttachments.model'
 import SupportingPackagesCommunicationsUsersManager from './supportingPackagescommunicationsUsers.model'
+import JournalEntriesManager from './journalEntries.model'
 
 const $LabelsManager = new LabelsManager(Knex)
 
@@ -47,6 +48,8 @@ const $SupportingPackagesCommunicationsAttachmentsManager = new SupportingPackag
 const $SupportingPackagesCommunicationsUsersManager = new SupportingPackagesCommunicationsUsersManager(Knex)
 
 const $SupportingPackagesCommunicationsManager = new SupportingPackagesCommunicationsManager(Knex)
+
+const $JournalEntriesManager = new JournalEntriesManager(Knex)
 
 
 export {
@@ -81,6 +84,7 @@ export {
   $SupportingPackagesCommunicationsAttachmentsManager,
   SupportingPackagesCommunicationsAttachmentsManager,
   $SupportingPackagesCommunicationsUsersManager,
-  SupportingPackagesCommunicationsUsersManager
-
+  SupportingPackagesCommunicationsUsersManager,
+  $JournalEntriesManager,
+  JournalEntriesManager
 }
