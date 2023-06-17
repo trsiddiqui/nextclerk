@@ -8,10 +8,6 @@ import {
   getSupportingPackage,
   createSupportingPackageCommunication,
   getSupportingPackageCommunicationByCommunicationUUID,
-  createJournalEntries,
-  getJournalEntries,
-  updateJournalEntries,
-  deleteJournalEntries,
 } from '../routes/handlers/supportingPackages'
 
 const router = Router()
@@ -35,10 +31,10 @@ router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communi
 router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications/:communicationUUID`, getSupportingPackageCommunicationByCommunicationUUID)
 
 // JE
-router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, createJournalEntries)
-router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, updateJournalEntries)
-router.delete(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, deleteJournalEntries)
-router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, getJournalEntries)
+// router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, createJournalEntries)
+// router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, updateJournalEntries)
+// router.delete(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, deleteJournalEntries)
+// router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, getJournalEntries)
 
 
 

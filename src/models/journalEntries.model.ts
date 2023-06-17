@@ -1,7 +1,6 @@
 import { Knex } from 'knex'
 import { DateTime } from 'luxon'
-import { SupportingPackage, SupportingPackageRequest } from '../types/supportingPackage'
-import { JournalEntryRequest, JournalEntryRequestWithUUID, JournalEntryWithDate, JournalEntryWithoutID } from '@/types/journalEntries'
+import { JournalEntryRequest, JournalEntryWithDate, JournalEntryWithoutID } from '@/types'
 
 export default class JournalEntriesManager {
   #knex: Knex
@@ -15,7 +14,7 @@ export default class JournalEntriesManager {
     ids,
   }: {
     txn?: Knex.Transaction
-    ids: string[]
+    ids: number[]
   }): Promise<JournalEntryWithDate[]> {
     let query = this.#knex
       .withSchema('public')
@@ -82,7 +81,7 @@ export default class JournalEntriesManager {
   }: {
     supportingPackageID: number
     userXRefID: string
-    journalEntryLine: Partial<JournalEntryRequestWithUUID>
+    journalEntryLine: Partial<JournalEntryRequest>
     identifier: { JournalEntryUUID: string } | { JournalEntryID: string }
   }): Promise<JournalEntryWithDate> {
     let query = this.#knex
@@ -107,14 +106,14 @@ export default class JournalEntriesManager {
     return journalEntryResponse
   }
 
-  public async deleteJournalEntryLine({
+  public async deleteJournalEntries({
     supportingPackageID,
     identifier,
     userXRefID,
   }: {
     supportingPackageID: number
     userXRefID: string
-    identifier: { JournalEntryUUID: string } | { JournalEntryID: string }
+    identifier: { JournalEntryUUIDs: string[] } | { JournalEntryIDs: number[] }
   }): Promise<void> {
     let query = this.#knex
       .withSchema('public')
@@ -122,12 +121,12 @@ export default class JournalEntriesManager {
       .update({ deletedAt: DateTime.utc(), deletedBy: userXRefID})
       .where({ supportingPackageID })
 
-    if ('JournalEntryUUID' in identifier) {
-      query = query.where('uuid', identifier.JournalEntryUUID)
+    if ('JournalEntryUUIDs' in identifier) {
+      query = query.whereIn('uuid', identifier.JournalEntryUUIDs)
     }
 
-    if ('JournalEntryID' in identifier) {
-      query = query.where('id', identifier.JournalEntryID)
+    if ('JournalEntryIDs' in identifier) {
+      query = query.whereIn('id', identifier.JournalEntryIDs)
     }
 
     await query

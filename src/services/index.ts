@@ -32,6 +32,7 @@ import CustomerAuthDetailsService from './customerAuthDetails.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
+import SupportingPackageJournalEntriesService from './supportingPackagesJournalEntries.service'
 
 export const $CategoryService = new CategoryService({
   categoriesManager: $CategoriesManager,
@@ -102,6 +103,15 @@ export const $SupportingPackageCommunicationService = new SupportingPackageCommu
   usersService: $UserService
 })
 
+export const $SupportingPackageJournalEntriesService = new SupportingPackageJournalEntriesService({
+  journalEntriesManager: $JournalEntriesManager,
+  accountService: $AccountService,
+  customerService: $CustomerService,
+  departmentService: $DepartmentService,
+  entityService: $EntityService,
+  locationService: $LocationService
+})
+
 export const $SupportingPackageService = new SupportingPackageService({
   supportingPackagesManager: $SupportingPackagesManager,
   categoryService: $CategoryService,
@@ -112,10 +122,6 @@ export const $SupportingPackageService = new SupportingPackageService({
   supportingPackageAttachmentService: $SupportingPackageAttachmentService,
   supportingPackagesUsersService: $SupportingPackageUserService,
   supportingPackageCommunicationService: $SupportingPackageCommunicationService,
-  accountService: $AccountService,
-  departmentService: $DepartmentService,
-  locationService: $LocationService,
-  customerService: $CustomerService,
-  journalEntriesManager: $JournalEntriesManager
+  supportingPackageJournalEntriesService: $SupportingPackageJournalEntriesService,
 
 })

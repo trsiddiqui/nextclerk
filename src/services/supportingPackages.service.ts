@@ -1,6 +1,3 @@
-import Excel from 'exceljs'
-import XLSX from 'xlsx'
-import { hash } from 'bcrypt'
 import { v4 } from 'uuid'
 import {
   SupportingPackage,
@@ -8,7 +5,7 @@ import {
   SupportingPackageResponse,
 } from '../types/supportingPackage'
 import { HttpException } from '../exceptions/HttpException'
-import { JournalEntriesManager, SupportingPackagesManager, SupportingPackagesUsersManager } from '../models'
+import { SupportingPackagesManager } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
 import EntityService from './entities.service'
@@ -16,27 +13,16 @@ import UserService from './user.service'
 import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
 import { DRIVE_ID } from '../config'
-import knex, { Knex } from 'knex'
 import {
-  Category,
-  Label,
   SupportingPackageCommunicationRequest,
   SupportingPackageCommunicationResponse,
-  JournalEntry,
-  JournalEntryRequest,
-  JournalEntryResponse,
-  JournalEntryWithoutID,
-  JournalEntryRequestWithUUID
 } from '@/types'
 import SupportingPackageUserService from './supportingPackagesUsers.service'
 import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
 import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
 import { getMasterFileLinksFromSharepoint } from './sharepoint.service'
-import AccountService from './accounts.service'
-import DepartmentService from './departments.service'
-import LocationService from './locations.service'
-import CustomerService from './customers.service'
+import SupportingPackageJournalEntriesService from './supportingPackagesJournalEntries.service'
 
 
 
@@ -59,15 +45,7 @@ export default class SupportingPackageService {
 
   #supportingPackageCommunicationService: SupportingPackageCommunicationService
 
-  #accountService: AccountService
-
-  #departmentService: DepartmentService
-
-  #locationService: LocationService
-
-  #customerService: CustomerService
-
-  #journalEntriesManager: JournalEntriesManager
+  #supportingPackageJournalEntriesService: SupportingPackageJournalEntriesService
 
   constructor({
     supportingPackagesManager,
@@ -79,11 +57,7 @@ export default class SupportingPackageService {
     supportingPackagesUsersService,
     supportingPackageAttachmentService,
     supportingPackageCommunicationService,
-    accountService,
-    departmentService,
-    locationService,
-    customerService,
-    journalEntriesManager
+    supportingPackageJournalEntriesService,
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
@@ -94,11 +68,7 @@ export default class SupportingPackageService {
     supportingPackagesUsersService: SupportingPackageUserService
     supportingPackageAttachmentService: SupportingPackageAttachmentService
     supportingPackageCommunicationService: SupportingPackageCommunicationService
-    accountService: AccountService
-    departmentService: DepartmentService
-    locationService: LocationService
-    customerService: CustomerService
-    journalEntriesManager: JournalEntriesManager
+    supportingPackageJournalEntriesService: SupportingPackageJournalEntriesService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
@@ -109,11 +79,7 @@ export default class SupportingPackageService {
     this.#supportingPackagesUsersService = supportingPackagesUsersService
     this.#supportingPackageAttachmentService = supportingPackageAttachmentService
     this.#supportingPackageCommunicationService = supportingPackageCommunicationService
-    this.#accountService = accountService
-    this.#departmentService = departmentService
-    this.#locationService = locationService
-    this.#customerService = customerService
-    this.#journalEntriesManager = journalEntriesManager
+    this.#supportingPackageJournalEntriesService = supportingPackageJournalEntriesService
   }
 
   public async validateAndGetSupportingPackages({
@@ -347,6 +313,7 @@ export default class SupportingPackageService {
       users,
       files,
       communications,
+      journalEntries
     } = supportingPackageRequest
 
     const [label, category, usersRequest, attachment] = await Promise.all([
@@ -434,6 +401,15 @@ export default class SupportingPackageService {
       }
     )
 
+    if (journalEntries?.length > 0) {
+      await this.#supportingPackageJournalEntriesService.insertSupportingPackageJournalEntries({
+          journalEntries,
+          supportingPackageId: createdSP.id,
+          userXRefID,
+        }
+      )
+    }
+
     return this.getSupportingPackage({
       customerXRefID,
       supportingPackageUUID: createdSP.uuid,
@@ -519,6 +495,8 @@ export default class SupportingPackageService {
       date,
       users,
       files,
+      communications,
+      journalEntries,
     } = supportingPackageRequest
 
     const [label, category, mapUser] = await Promise.all([
@@ -596,6 +574,13 @@ export default class SupportingPackageService {
         userXRefID,
       }
     )
+    if (journalEntries?.length) {
+      await this.#supportingPackageJournalEntriesService.upsertSupportingPackageJournalEntries({
+        journalEntries ,
+        supportingPackageId: coreSupportingPackage.id,
+        userXRefID
+      })
+    }
 
     return this.getSupportingPackage({
       customerXRefID,
@@ -673,6 +658,13 @@ export default class SupportingPackageService {
         }
       )
 
+    const journalEntries =
+      await this.#supportingPackageJournalEntriesService.getJournalEntryBySupportingPackageId(
+        {
+          supportingPackageId: id,
+        }
+      )
+
     const masterFile = files.find((file) => file.isMaster)
     if (masterFile) {
       const downloadLink = await getMasterFileLinksFromSharepoint({
@@ -703,295 +695,296 @@ export default class SupportingPackageService {
       updatedAt,
       updatedBy,
       communications,
+      journalEntries,
     }
   }
 
-  public async getJournalEntryBySupportingPackageId({
-    supportingPackageUUID,
-  }: {
-    supportingPackageUUID: string,
-  }) : Promise<JournalEntryResponse[]> {
-    const supportingPackage = await this.validateAndGetSupportingPackages({
-      identifiers: {
-        uuids: [supportingPackageUUID]
-      }
-    })
-    const supportingPackageId = supportingPackage.get(supportingPackageUUID).id
+  // public async getJournalEntryBySupportingPackageId({
+  //   supportingPackageUUID,
+  // }: {
+  //   supportingPackageUUID: string,
+  // }) : Promise<JournalEntryResponse[]> {
+  //   const supportingPackage = await this.validateAndGetSupportingPackages({
+  //     identifiers: {
+  //       uuids: [supportingPackageUUID]
+  //     }
+  //   })
+  //   const supportingPackageId = supportingPackage.get(supportingPackageUUID).id
 
-    const journalEntryLines = await this.#journalEntriesManager.getAllJournalEntryLinesBySupportingPackageIDs({
-      ids: [supportingPackageId.toString()]
-    })
-    return journalEntryLines
-  }
+  //   const journalEntryLines = await this.#journalEntriesManager.getAllJournalEntryLinesBySupportingPackageIDs({
+  //     ids: [supportingPackageId.toString()]
+  //   })
+  //   return journalEntryLines
+  // }
 
-  public async createSupportingPackageJournalEntries({
-    customerXRefID,
-    supportingPackageUUID,
-    journalEntryLines,
-    userXRefID,
-  }: {
-    customerXRefID: string
-    supportingPackageUUID: string
-    journalEntryLines: JournalEntryRequest[]
-    userXRefID: string
-  }): Promise<JournalEntryResponse[]> {
-    await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [customerXRefID] },
-    })
-    const supportingPackage = await this.validateAndGetSupportingPackages({
-      identifiers: {
-        uuids: [supportingPackageUUID]
-      }
-    })
-    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+  // public async createSupportingPackageJournalEntries({
+  //   customerXRefID,
+  //   supportingPackageUUID,
+  //   journalEntryLines,
+  //   userXRefID,
+  // }: {
+  //   customerXRefID: string
+  //   supportingPackageUUID: string
+  //   journalEntryLines: JournalEntryRequest[]
+  //   userXRefID: string
+  // }): Promise<JournalEntryResponse[]> {
+  //   await this.#entityService.validateAndGetEntities({
+  //     identifiers: { uuids: [customerXRefID] },
+  //   })
+  //   const supportingPackage = await this.validateAndGetSupportingPackages({
+  //     identifiers: {
+  //       uuids: [supportingPackageUUID]
+  //     }
+  //   })
+  //   if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
 
-    if (journalEntryLines.length === 0) {
-      throw new HttpException(400, 'Journal entry is empty')
-    }
+  //   if (journalEntryLines.length === 0) {
+  //     throw new HttpException(400, 'Journal entry is empty')
+  //   }
 
-    for (const journalEntry of journalEntryLines) {
-      const {
-        accountUUID,
-        departmentUUID,
-        locationUUID,
-        customerUUID,
-        amount,
-        memo,
-        referenceCode,
-        type
-      } = journalEntry
+  //   for (const journalEntry of journalEntryLines) {
+  //     const {
+  //       accountUUID,
+  //       departmentUUID,
+  //       locationUUID,
+  //       customerUUID,
+  //       amount,
+  //       memo,
+  //       referenceCode,
+  //       type
+  //     } = journalEntry
 
-      let accountID, departmentID, locationID, customerID
+  //     let accountID, departmentID, locationID, customerID
 
-      const account = await this.#accountService.validateAndGetAccounts({
-          identifiers: {
-            uuids: [accountUUID],
-          },
-        })
-      accountID = account.get(accountUUID).id
+  //     const account = await this.#accountService.validateAndGetAccounts({
+  //         identifiers: {
+  //           uuids: [accountUUID],
+  //         },
+  //       })
+  //     accountID = account.get(accountUUID).id
 
-      if (departmentUUID) {
-        const department = await this.#departmentService.validateAndGetDepartments({
-          identifiers: {
-            uuids: [departmentUUID]
-          }
-        })
-        departmentID = department.get(departmentUUID).id
-      }
+  //     if (departmentUUID) {
+  //       const department = await this.#departmentService.validateAndGetDepartments({
+  //         identifiers: {
+  //           uuids: [departmentUUID]
+  //         }
+  //       })
+  //       departmentID = department.get(departmentUUID).id
+  //     }
 
-      if (locationUUID) {
-        const location = await this.#locationService.validateAndGetLocations({
-          identifiers: {
-            uuids: [locationUUID]
-          }
-        })
-        locationID = location.get(locationUUID).id
-      }
+  //     if (locationUUID) {
+  //       const location = await this.#locationService.validateAndGetLocations({
+  //         identifiers: {
+  //           uuids: [locationUUID]
+  //         }
+  //       })
+  //       locationID = location.get(locationUUID).id
+  //     }
 
-      if (customerUUID) {
-        const customer = await this.#customerService.validateAndGetCustomers({
-          identifiers: {
-            uuids: [customerUUID]
-          }
-        })
-        customerID = customer.get(customerUUID).id
-      }
-      const uuid = v4()
-      const journalEntryObject : JournalEntryWithoutID = {
-        uuid,
-        amount,
-        type,
-        memo,
-        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
-        accountID,
-        customerID,
-        departmentID,
-        locationID,
-        referenceCode
-      }
+  //     if (customerUUID) {
+  //       const customer = await this.#customerService.validateAndGetCustomers({
+  //         identifiers: {
+  //           uuids: [customerUUID]
+  //         }
+  //       })
+  //       customerID = customer.get(customerUUID).id
+  //     }
+  //     const uuid = v4()
+  //     const journalEntryObject : JournalEntryWithoutID = {
+  //       uuid,
+  //       amount,
+  //       type,
+  //       memo,
+  //       supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+  //       accountID,
+  //       customerID,
+  //       departmentID,
+  //       locationID,
+  //       referenceCode
+  //     }
 
-      await this.#journalEntriesManager.createJournalEntryLine({
-        JournalEntry: journalEntryObject,
-        userXRefID
-      })
+  //     await this.#journalEntriesManager.createJournalEntryLine({
+  //       JournalEntry: journalEntryObject,
+  //       userXRefID
+  //     })
 
-    }
+  //   }
 
-    const response = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageUUID
-    })
+  //   const response = await this.getJournalEntryBySupportingPackageId({
+  //     supportingPackageUUID
+  //   })
 
-    return response
-  }
+  //   return response
+  // }
 
-  public async updateSupportingPackageJournalEntries({
-    customerXRefID,
-    supportingPackageUUID,
-    journalEntryLines,
-    userXRefID,
-  }: {
-    customerXRefID: string
-    supportingPackageUUID: string
-    journalEntryLines: JournalEntryRequestWithUUID[]
-    userXRefID: string
-  }): Promise<JournalEntryResponse[]> {
-    await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [customerXRefID] },
-    })
-    const supportingPackage = await this.validateAndGetSupportingPackages({
-      identifiers: {
-        uuids: [supportingPackageUUID]
-      }
-    })
-    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+  // public async upsertSupportingPackageJournalEntries({
+  //   customerXRefID,
+  //   supportingPackageUUID,
+  //   journalEntryLines,
+  //   userXRefID,
+  // }: {
+  //   customerXRefID: string
+  //   supportingPackageUUID: string
+  //   journalEntryLines: JournalEntryRequestWithUUID[]
+  //   userXRefID: string
+  // }): Promise<JournalEntryResponse[]> {
+  //   await this.#entityService.validateAndGetEntities({
+  //     identifiers: { uuids: [customerXRefID] },
+  //   })
+  //   const supportingPackage = await this.validateAndGetSupportingPackages({
+  //     identifiers: {
+  //       uuids: [supportingPackageUUID]
+  //     }
+  //   })
+  //   if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
 
-    if (journalEntryLines.length === 0) {
-      throw new HttpException(400, 'Journal entry is empty')
-    }
+  //   if (journalEntryLines.length === 0) {
+  //     throw new HttpException(400, 'Journal entry is empty')
+  //   }
 
-    for (const journalEntry of journalEntryLines) {
-      const {
-        uuid,
-        accountUUID,
-        departmentUUID,
-        locationUUID,
-        customerUUID,
-        amount,
-        memo,
-        referenceCode,
-        type
-      } = journalEntry
+  //   for (const journalEntry of journalEntryLines) {
+  //     const {
+  //       uuid,
+  //       accountUUID,
+  //       departmentUUID,
+  //       locationUUID,
+  //       customerUUID,
+  //       amount,
+  //       memo,
+  //       referenceCode,
+  //       type
+  //     } = journalEntry
 
-      if(!uuid) {
-        throw new HttpException(400, 'Journal entry line without UUID can not updated')
-      }
+  //     if(!uuid) {
+  //       throw new HttpException(400, 'Journal entry line without UUID can not updated')
+  //     }
 
-      const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
-        uuid
-      })
-      if(!foundedJournalEntryLine) {
-        throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
-      }
+  //     const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
+  //       uuid
+  //     })
+  //     if(!foundedJournalEntryLine) {
+  //       throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
+  //     }
 
-      let accountID, departmentID, locationID, customerID
+  //     let accountID, departmentID, locationID, customerID
 
-      const account = await this.#accountService.validateAndGetAccounts({
-          identifiers: {
-            uuids: [accountUUID],
-          },
-        })
-      accountID = account.get(accountUUID).id
+  //     const account = await this.#accountService.validateAndGetAccounts({
+  //         identifiers: {
+  //           uuids: [accountUUID],
+  //         },
+  //       })
+  //     accountID = account.get(accountUUID).id
 
-      if (departmentUUID) {
-        const department = await this.#departmentService.validateAndGetDepartments({
-          identifiers: {
-            uuids: [departmentUUID]
-          }
-        })
-        departmentID = department.get(departmentUUID).id
-      }
+  //     if (departmentUUID) {
+  //       const department = await this.#departmentService.validateAndGetDepartments({
+  //         identifiers: {
+  //           uuids: [departmentUUID]
+  //         }
+  //       })
+  //       departmentID = department.get(departmentUUID).id
+  //     }
 
-      if (locationUUID) {
-        const location = await this.#locationService.validateAndGetLocations({
-          identifiers: {
-            uuids: [locationUUID]
-          }
-        })
-        locationID = location.get(locationUUID).id
-      }
+  //     if (locationUUID) {
+  //       const location = await this.#locationService.validateAndGetLocations({
+  //         identifiers: {
+  //           uuids: [locationUUID]
+  //         }
+  //       })
+  //       locationID = location.get(locationUUID).id
+  //     }
 
-      if (customerUUID) {
-        const customer = await this.#customerService.validateAndGetCustomers({
-          identifiers: {
-            uuids: [customerUUID]
-          }
-        })
-        customerID = customer.get(customerUUID).id
-      }
-      const journalEntryObject : JournalEntryWithoutID = {
-        uuid,
-        amount,
-        type,
-        memo,
-        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
-        accountID,
-        customerID,
-        departmentID,
-        locationID,
-        referenceCode
-      }
+  //     if (customerUUID) {
+  //       const customer = await this.#customerService.validateAndGetCustomers({
+  //         identifiers: {
+  //           uuids: [customerUUID]
+  //         }
+  //       })
+  //       customerID = customer.get(customerUUID).id
+  //     }
+  //     const journalEntryObject : JournalEntryWithoutID = {
+  //       uuid,
+  //       amount,
+  //       type,
+  //       memo,
+  //       supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+  //       accountID,
+  //       customerID,
+  //       departmentID,
+  //       locationID,
+  //       referenceCode
+  //     }
 
-      await this.#journalEntriesManager.updateJournalEntryLine({
-        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
-        identifier: { JournalEntryUUID: uuid},
-        journalEntryLine: journalEntryObject,
-        userXRefID,
-      })
+  //     await this.#journalEntriesManager.updateJournalEntryLine({
+  //       supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+  //       identifier: { JournalEntryUUID: uuid},
+  //       journalEntryLine: journalEntryObject,
+  //       userXRefID,
+  //     })
 
-    }
+  //   }
 
-    const response = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageUUID
-    })
+  //   const response = await this.getJournalEntryBySupportingPackageId({
+  //     supportingPackageUUID
+  //   })
 
-    return response
-  }
+  //   return response
+  // }
 
-  public async deleteSupportingPackageJournalEntries({
-    customerXRefID,
-    supportingPackageUUID,
-    journalEntryLines,
-    userXRefID,
-  }: {
-    customerXRefID: string
-    supportingPackageUUID: string
-    journalEntryLines: JournalEntryRequestWithUUID[]
-    userXRefID: string
-  }): Promise<JournalEntryResponse[]> {
-    await this.#entityService.validateAndGetEntities({
-      identifiers: { uuids: [customerXRefID] },
-    })
-    const supportingPackage = await this.validateAndGetSupportingPackages({
-      identifiers: {
-        uuids: [supportingPackageUUID]
-      }
-    })
-    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+  // public async deleteSupportingPackageJournalEntries({
+  //   customerXRefID,
+  //   supportingPackageUUID,
+  //   journalEntryLines,
+  //   userXRefID,
+  // }: {
+  //   customerXRefID: string
+  //   supportingPackageUUID: string
+  //   journalEntryLines: JournalEntryRequestWithUUID[]
+  //   userXRefID: string
+  // }): Promise<JournalEntryResponse[]> {
+  //   await this.#entityService.validateAndGetEntities({
+  //     identifiers: { uuids: [customerXRefID] },
+  //   })
+  //   const supportingPackage = await this.validateAndGetSupportingPackages({
+  //     identifiers: {
+  //       uuids: [supportingPackageUUID]
+  //     }
+  //   })
+  //   if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
 
-    if (journalEntryLines.length === 0) {
-      throw new HttpException(400, 'Journal entry is empty')
-    }
+  //   if (journalEntryLines.length === 0) {
+  //     throw new HttpException(400, 'Journal entry is empty')
+  //   }
 
-    for (const journalEntry of journalEntryLines) {
-      const {
-        uuid
-      } = journalEntry
+  //   for (const journalEntry of journalEntryLines) {
+  //     const {
+  //       uuid
+  //     } = journalEntry
 
-      if(!uuid) {
-        throw new HttpException(400, 'Journal entry line without UUID can not deleted')
-      }
+  //     if(!uuid) {
+  //       throw new HttpException(400, 'Journal entry line without UUID can not deleted')
+  //     }
 
-      const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
-        uuid
-      })
-      if(!foundedJournalEntryLine) {
-        throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
-      }
+  //     const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
+  //       uuid
+  //     })
+  //     if(!foundedJournalEntryLine) {
+  //       throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
+  //     }
 
 
-      await this.#journalEntriesManager.deleteJournalEntryLine({
-        supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
-        identifier: { JournalEntryUUID: uuid},
-        userXRefID,
-      })
-    }
+  //     await this.#journalEntriesManager.deleteJournalEntryLine({
+  //       supportingPackageID: supportingPackage.get(supportingPackageUUID).id,
+  //       identifier: { JournalEntryUUID: uuid},
+  //       userXRefID,
+  //     })
+  //   }
 
-    const response = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageUUID
-    })
+  //   const response = await this.getJournalEntryBySupportingPackageId({
+  //     supportingPackageUUID
+  //   })
 
-    return response
-  }
+  //   return response
+  // }
 
   // public async updateSupportingPackage(userId: number, userData: SupportingPackage): Promise<SupportingPackage> {
   //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty')
