@@ -1,20 +1,13 @@
 import { v4 } from 'uuid'
 import { HttpException } from '../exceptions/HttpException'
-import { JournalEntriesManager, SupportingPackagesManager, SupportingPackagesUsersManager } from '../models'
-import CategoryService from '../services/categories.service'
-import LabelService from '../services/labels.service'
+import { JournalEntriesManager } from '../models'
 import EntityService from './entities.service'
-import UserService from './user.service'
 import { isEmpty } from '../utils/util'
 import {
   JournalEntryRequest,
   JournalEntryResponse,
   JournalEntryWithoutID,
 } from '@/types'
-import SupportingPackageUserService from './supportingPackagesUsers.service'
-import SupportingPackageAttachmentService from './supportingPackagesAttachments.service'
-import FileService from './files.service'
-import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
 import AccountService from './accounts.service'
 import DepartmentService from './departments.service'
 import LocationService from './locations.service'
@@ -94,11 +87,16 @@ export default class SupportingPackageJournalEntriesService {
         departmentUUID,
         locationUUID,
         customerUUID,
-        amount,
+        creditAmount,
+        debitAmount,
         memo,
         referenceCode,
-        type
+        cellLink,
       } = journalEntry
+
+      if( creditAmount && debitAmount) {
+        throw new HttpException(400, 'Journal entry line is not valid. debit and credit in the same line!!')
+      }
 
       let accountID, departmentID, locationID, customerID
 
@@ -138,8 +136,9 @@ export default class SupportingPackageJournalEntriesService {
       const uuid = v4()
       const journalEntryObject : JournalEntryWithoutID = {
         uuid,
-        amount,
-        type,
+        debitAmount,
+        creditAmount,
+        cellLink,
         memo,
         supportingPackageID: supportingPackageId,
         accountID,
@@ -214,10 +213,11 @@ export default class SupportingPackageJournalEntriesService {
         departmentUUID,
         locationUUID,
         customerUUID,
-        amount,
+        debitAmount,
+        creditAmount,
         memo,
         referenceCode,
-        type
+        cellLink
       } = foundedJE
 
       if(!uuid) {
@@ -268,15 +268,16 @@ export default class SupportingPackageJournalEntriesService {
       }
       const journalEntryObject : JournalEntryWithoutID = {
         uuid,
-        amount,
-        type,
+        creditAmount,
+        debitAmount,
         memo,
         supportingPackageID: supportingPackageId,
         accountID,
         customerID,
         departmentID,
         locationID,
-        referenceCode
+        referenceCode,
+        cellLink
       }
 
       await this.#journalEntriesManager.updateJournalEntryLine({

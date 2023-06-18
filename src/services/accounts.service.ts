@@ -23,7 +23,7 @@ export default class AccountService {
   }: {
     identifiers: { uuids: string[] } | { ids: string[] }
   }): Promise<Map<string, Account>> {
-    const returnedAccounts = await this.#accountsManager.getAccountssByIdentifiers({
+    const returnedAccounts = await this.#accountsManager.getAccountsByIdentifiers({
       identifiers,
     })
 
