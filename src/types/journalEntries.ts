@@ -29,6 +29,7 @@ export type JournalEntryWithDate = JournalEntry & EntityDateWithDelete
 
 
 export interface JournalEntryRequest {
+  uuid?: string
   accountUUID: string
   departmentUUID?: string
   locationUUID?: string
@@ -39,9 +40,6 @@ export interface JournalEntryRequest {
   amount: number
 }
 
-export type JournalEntryRequestWithUUID = JournalEntryRequest  & {
-  uuid: string
-}
 
 export type JournalEntryResponse = Omit<JournalEntryWithDate, 'id'>
 

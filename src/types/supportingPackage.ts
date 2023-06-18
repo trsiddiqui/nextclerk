@@ -6,7 +6,10 @@ import {
   SupportingPackageUserRequest,
   SupportingPackageCommunicationRequest,
   SupportingPackageCommunicationResponse,
+  JournalEntryRequest,
+  JournalEntryResponse,
 } from '../types'
+
 export interface SupportingPackageRequest {
   number: string
   title: string
@@ -19,6 +22,7 @@ export interface SupportingPackageRequest {
   users: SupportingPackageUserRequest[]
   files: supportingPackageFile[]
   communications: SupportingPackageCommunicationRequest[]
+  journalEntries?: JournalEntryRequest[]
 }
 
 export interface supportingPackageFile {
@@ -57,6 +61,7 @@ export interface SupportingPackageResponse extends EntityDate {
   users: SupportingPackageUserResponse[]
   files: SupportingPackageAttachmentResponseWithUUID[]
   communications: SupportingPackageCommunicationResponse[]
+  journalEntries: JournalEntryResponse[]
 }
 
 export interface SupportingPackageAttachmentResponse extends EntityDateWithDelete {
