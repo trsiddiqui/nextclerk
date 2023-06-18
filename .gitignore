@@ -128,7 +128,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-.env.development.*
 EJ2-Spreadsheet-WebServices/ASP.NET CORE/Core/obj
 src/nextclerk-tmp/
 src/routes/nextclerk-tmp/
