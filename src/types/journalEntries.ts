@@ -1,9 +1,5 @@
 import { EntityDateWithDelete } from "./common"
 
-export enum JETypes {
-  DEBIT = 'DEBIT',
-  CREDIT = 'CREDIT'
-}
 
 export interface JournalEntry {
   id: number
@@ -14,14 +10,13 @@ export interface JournalEntry {
   locationID?: number
   customerID?: number
   referenceCode?: string
-  type: JETypes
   memo?: string
-  amount: number
+  cellLink?: string
+  debitAmount: number
+  creditAmount: number
+
 }
 
-export interface JERequestBody  {
-  journalEntryLines: JournalEntryRequest[]
-}
 
 export type JournalEntryWithoutID =  Omit<JournalEntry, 'id'>
 
@@ -35,9 +30,10 @@ export interface JournalEntryRequest {
   locationUUID?: string
   customerUUID?: string
   referenceCode?: string
-  type: JETypes
   memo?: string
-  amount: number
+  cellLink?: string
+  debitAmount: number
+  creditAmount: number
 }
 
 

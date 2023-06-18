@@ -11,7 +11,7 @@ export default class AccountsManager extends RelationsManager {
     this.#knex = knex
   }
 
-  public async getAccountssByIdentifiers({
+  public async getAccountsByIdentifiers({
     txn,
     identifiers,
   }: {
@@ -31,8 +31,9 @@ export default class AccountsManager extends RelationsManager {
     if (txn) {
       query = query.transacting(txn)
     }
+    const accounts = await query
 
-    return query
+    return  accounts
   }
 
   public async getAllAccounts({
@@ -52,7 +53,9 @@ export default class AccountsManager extends RelationsManager {
       query = query.transacting(txn)
     }
 
-    return query
+    const accounts = await query
+
+    return  accounts
   }
 
   public async upsertAccounts({
