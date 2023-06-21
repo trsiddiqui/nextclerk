@@ -19,7 +19,21 @@ export default class JournalEntriesManager {
     let query = this.#knex
       .withSchema('public')
       .table('journal_entry_details')
-      .select<JournalEntryWithDate[]>('*')
+      .join('departments', 'departments.id', 'journal_entry_details.departmentID')
+      .join('locations', 'locations.id', 'journal_entry_details.locationID')
+      .join('accounts', 'accounts.id', 'journal_entry_details.accountID')
+      .join('customers', 'customers.id', 'journal_entry_details.customerID')
+      .select<JournalEntryWithDate[]>(
+        'journal_entry_details.*',
+        'departments.label as departmentLabel',
+        'departments.uuid as departmentUUID',
+        'locations.label as locationLabel',
+        'locations.uuid as locationUUID',
+        'accounts.label as accountLabel',
+        'accounts.uuid as accountUUID',
+        'customers.label as customerLabel',
+        'customers.uuid as customerUUID'
+      )
       .whereIn('supportingPackageID', ids)
 
     if (txn) {
@@ -118,7 +132,7 @@ export default class JournalEntriesManager {
     let query = this.#knex
       .withSchema('public')
       .table('journal_entry_details')
-      .update({ deletedAt: DateTime.utc(), deletedBy: userXRefID})
+      .update({ deletedAt: DateTime.utc(), deletedBy: userXRefID })
       .where({ supportingPackageID })
 
     if ('JournalEntryUUIDs' in identifier) {
@@ -131,6 +145,4 @@ export default class JournalEntriesManager {
 
     await query
   }
-
-
 }

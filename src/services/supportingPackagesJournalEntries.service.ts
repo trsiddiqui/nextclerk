@@ -3,21 +3,14 @@ import { HttpException } from '../exceptions/HttpException'
 import { JournalEntriesManager } from '../models'
 import EntityService from './entities.service'
 import { isEmpty } from '../utils/util'
-import {
-  JournalEntryRequest,
-  JournalEntryResponse,
-  JournalEntryWithoutID,
-} from '@/types'
+import { JournalEntryRequest, JournalEntryResponse, JournalEntryWithoutID } from '@/types'
 import AccountService from './accounts.service'
 import DepartmentService from './departments.service'
 import LocationService from './locations.service'
 import CustomerService from './customers.service'
 import { findElementsDiff } from '@/services/helpers/general'
 
-
-
 export default class SupportingPackageJournalEntriesService {
-
   #entityService: EntityService
 
   #accountService: AccountService
@@ -36,7 +29,7 @@ export default class SupportingPackageJournalEntriesService {
     departmentService,
     locationService,
     customerService,
-    journalEntriesManager
+    journalEntriesManager,
   }: {
     entityService: EntityService
     accountService: AccountService
@@ -53,16 +46,15 @@ export default class SupportingPackageJournalEntriesService {
     this.#journalEntriesManager = journalEntriesManager
   }
 
-
   public async getJournalEntryBySupportingPackageId({
     supportingPackageId,
   }: {
-    supportingPackageId: number,
-  }) : Promise<JournalEntryResponse[]> {
-
-    const journalEntryLines = await this.#journalEntriesManager.getAllJournalEntryLinesBySupportingPackageIDs({
-      ids: [supportingPackageId]
-    })
+    supportingPackageId: number
+  }): Promise<JournalEntryResponse[]> {
+    const journalEntryLines =
+      await this.#journalEntriesManager.getAllJournalEntryLinesBySupportingPackageIDs({
+        ids: [supportingPackageId],
+      })
     return journalEntryLines
   }
 
@@ -94,24 +86,27 @@ export default class SupportingPackageJournalEntriesService {
         cellLink,
       } = journalEntry
 
-      if( creditAmount && debitAmount) {
-        throw new HttpException(400, 'Journal entry line is not valid. debit and credit in the same line!!')
+      if (creditAmount && debitAmount) {
+        throw new HttpException(
+          400,
+          'Journal entry line is not valid. debit and credit in the same line!!'
+        )
       }
 
       let accountID, departmentID, locationID, customerID
 
       const account = await this.#accountService.validateAndGetAccounts({
-          identifiers: {
-            uuids: [accountUUID],
-          },
-        })
+        identifiers: {
+          uuids: [accountUUID],
+        },
+      })
       accountID = account.get(accountUUID).id
 
       if (departmentUUID) {
         const department = await this.#departmentService.validateAndGetDepartments({
           identifiers: {
-            uuids: [departmentUUID]
-          }
+            uuids: [departmentUUID],
+          },
         })
         departmentID = department.get(departmentUUID).id
       }
@@ -119,8 +114,8 @@ export default class SupportingPackageJournalEntriesService {
       if (locationUUID) {
         const location = await this.#locationService.validateAndGetLocations({
           identifiers: {
-            uuids: [locationUUID]
-          }
+            uuids: [locationUUID],
+          },
         })
         locationID = location.get(locationUUID).id
       }
@@ -128,13 +123,13 @@ export default class SupportingPackageJournalEntriesService {
       if (customerUUID) {
         const customer = await this.#customerService.validateAndGetCustomers({
           identifiers: {
-            uuids: [customerUUID]
-          }
+            uuids: [customerUUID],
+          },
         })
         customerID = customer.get(customerUUID).id
       }
       const uuid = v4()
-      const journalEntryObject : JournalEntryWithoutID = {
+      const journalEntryObject: JournalEntryWithoutID = {
         uuid,
         debitAmount,
         creditAmount,
@@ -145,18 +140,17 @@ export default class SupportingPackageJournalEntriesService {
         customerID,
         departmentID,
         locationID,
-        referenceCode
+        referenceCode,
       }
 
       await this.#journalEntriesManager.createJournalEntryLine({
         JournalEntry: journalEntryObject,
-        userXRefID
+        userXRefID,
       })
-
     }
 
     const response = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageId
+      supportingPackageId,
     })
 
     return response
@@ -171,16 +165,15 @@ export default class SupportingPackageJournalEntriesService {
     journalEntries: JournalEntryRequest[]
     userXRefID: string
   }): Promise<JournalEntryResponse[]> {
-
     if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
     const existingJournalEntries = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageId
+      supportingPackageId,
     })
-    const journalEntriesWithUUID = journalEntries.filter( je => je.uuid !== undefined)
+    const journalEntriesWithUUID = journalEntries.filter((je) => je.uuid !== undefined)
 
     const toBeRemovedJournalEntries = findElementsDiff(
-      existingJournalEntries.map( je => je.uuid),
-      journalEntriesWithUUID.map( je => je.uuid)
+      existingJournalEntries.map((je) => je.uuid),
+      journalEntriesWithUUID.map((je) => je.uuid)
     )
 
     await this.#journalEntriesManager.deleteJournalEntries({
@@ -188,25 +181,24 @@ export default class SupportingPackageJournalEntriesService {
       identifier: {
         JournalEntryUUIDs: toBeRemovedJournalEntries,
       },
-      userXRefID
+      userXRefID,
     })
 
-
-    const newJournalEntries = journalEntries.filter( je => je.uuid === undefined)
+    const newJournalEntries = journalEntries.filter((je) => je.uuid === undefined)
 
     await this.insertSupportingPackageJournalEntries({
       supportingPackageId,
       userXRefID,
-      journalEntries: newJournalEntries
+      journalEntries: newJournalEntries,
     })
 
     const journalEntryUUIDsToUpdate = findElementsDiff(
-      journalEntriesWithUUID.map( je => je.uuid),
+      journalEntriesWithUUID.map((je) => je.uuid),
       toBeRemovedJournalEntries
     )
 
     for (const journalEntryUUID of journalEntryUUIDsToUpdate) {
-      const foundedJE = journalEntriesWithUUID.find( je => je.uuid === journalEntryUUID)
+      const foundedJE = journalEntriesWithUUID.find((je) => je.uuid === journalEntryUUID)
       const {
         uuid,
         accountUUID,
@@ -217,34 +209,34 @@ export default class SupportingPackageJournalEntriesService {
         creditAmount,
         memo,
         referenceCode,
-        cellLink
+        cellLink,
       } = foundedJE
 
-      if(!uuid) {
+      if (!uuid) {
         throw new HttpException(400, 'Journal entry line without UUID can not updated')
       }
 
       const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
-        uuid
+        uuid,
       })
-      if(!foundedJournalEntryLine) {
+      if (!foundedJournalEntryLine) {
         throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
       }
 
       let accountID, departmentID, locationID, customerID
 
       const account = await this.#accountService.validateAndGetAccounts({
-          identifiers: {
-            uuids: [accountUUID],
-          },
-        })
+        identifiers: {
+          uuids: [accountUUID],
+        },
+      })
       accountID = account.get(accountUUID).id
 
       if (departmentUUID) {
         const department = await this.#departmentService.validateAndGetDepartments({
           identifiers: {
-            uuids: [departmentUUID]
-          }
+            uuids: [departmentUUID],
+          },
         })
         departmentID = department.get(departmentUUID).id
       }
@@ -252,8 +244,8 @@ export default class SupportingPackageJournalEntriesService {
       if (locationUUID) {
         const location = await this.#locationService.validateAndGetLocations({
           identifiers: {
-            uuids: [locationUUID]
-          }
+            uuids: [locationUUID],
+          },
         })
         locationID = location.get(locationUUID).id
       }
@@ -261,12 +253,12 @@ export default class SupportingPackageJournalEntriesService {
       if (customerUUID) {
         const customer = await this.#customerService.validateAndGetCustomers({
           identifiers: {
-            uuids: [customerUUID]
-          }
+            uuids: [customerUUID],
+          },
         })
         customerID = customer.get(customerUUID).id
       }
-      const journalEntryObject : JournalEntryWithoutID = {
+      const journalEntryObject: JournalEntryWithoutID = {
         uuid,
         creditAmount,
         debitAmount,
@@ -277,20 +269,19 @@ export default class SupportingPackageJournalEntriesService {
         departmentID,
         locationID,
         referenceCode,
-        cellLink
+        cellLink,
       }
 
       await this.#journalEntriesManager.updateJournalEntryLine({
         supportingPackageID: supportingPackageId,
-        identifier: { JournalEntryUUID: uuid},
+        identifier: { JournalEntryUUID: uuid },
         journalEntryLine: journalEntryObject,
         userXRefID,
       })
-
     }
 
     const response = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageId
+      supportingPackageId,
     })
 
     return response
@@ -318,34 +309,30 @@ export default class SupportingPackageJournalEntriesService {
     }
 
     for (const journalEntry of journalEntries) {
-      const {
-        uuid
-      } = journalEntry
+      const { uuid } = journalEntry
 
-      if(!uuid) {
+      if (!uuid) {
         throw new HttpException(400, 'Journal entry line without UUID can not deleted')
       }
 
       const foundedJournalEntryLine = this.#journalEntriesManager.getJournalEntryLineByUUID({
-        uuid
+        uuid,
       })
-      if(!foundedJournalEntryLine) {
+      if (!foundedJournalEntryLine) {
         throw new HttpException(400, `Journal entry line with UUID : ${uuid} can not be found`)
       }
 
-
       await this.#journalEntriesManager.deleteJournalEntries({
         supportingPackageID: supportingPackageId,
-        identifier: { JournalEntryUUIDs: [uuid]},
+        identifier: { JournalEntryUUIDs: [uuid] },
         userXRefID,
       })
     }
 
     const response = await this.getJournalEntryBySupportingPackageId({
-      supportingPackageId
+      supportingPackageId,
     })
 
     return response
   }
-
 }
