@@ -9,7 +9,7 @@ const router = Router()
 router.post(
   '/:customerXRefID/actions/upload-file',
   middlewareFileHandler({
-    allowedExtensions: ['.xlsx', '.jpg', '.jpeg', '.png', '.pdf', '.docx'],
+    allowedExtensions: ['.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.pdf', '.docx'],
     maxFileSize: 5 * 1024 * 1024, // 5Mb
     formDataKey: 'file',
     storage: {
