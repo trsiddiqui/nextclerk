@@ -54,6 +54,7 @@ export async function up(knex: Knex): Promise<void> {
     table.text('name').notNullable()
     table.text('mimeType').nullable()
     table.text('location').notNullable()
+    table.text('downloadLink').nullable()
     table.text('remoteReferenceUuid').nullable()
     table.bigint('size').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())

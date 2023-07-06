@@ -483,7 +483,7 @@ export const uploadUpdatedFileToSharepoint = async ({
     accessToken,
     customerFolderId,
     fileName,
-    fileBuffer
+    fileBuffer,
   })
 
   // check file exist
@@ -541,13 +541,20 @@ export const uploadFileToSharepoint = async (
       fileName: uuidFileWithExtension,
       fileBuffer: fileData.buffer,
     })
-    const uploadedFileObject: FileRequest = {
+
+    const downloadLink = await getDownloadLink({
+      customerXRefID,
+      fileName: uuidFileWithExtension,
+    })
+
+    let uploadedFileObject: FileRequest = {
       uuid,
       entityID: foundEntity.get(customerXRefID).id,
       name: originalname,
       mimeType: mimetype,
       location: uploadedFile.sharingLink,
       size: fileData.size,
+      downloadLink,
     }
     await $FileService.createFile({
       file: uploadedFileObject,
