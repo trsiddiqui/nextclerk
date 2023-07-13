@@ -16,6 +16,7 @@ import {
   $SupportingPackagesCommunicationsAttachmentsManager,
   $SupportingPackagesCommunicationsUsersManager,
   $JournalEntriesManager,
+  $TasksManager,
 } from '../models'
 import CategoryService from '../services/categories.service'
 import LabelService from '../services/labels.service'
@@ -33,6 +34,7 @@ import SupportingPackageAttachmentService from './supportingPackagesAttachments.
 import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
 import SupportingPackageJournalEntriesService from './supportingPackagesJournalEntries.service'
+import TaskService from './tasks.service'
 
 export const $CategoryService = new CategoryService({
   categoriesManager: $CategoriesManager,
@@ -123,5 +125,14 @@ export const $SupportingPackageService = new SupportingPackageService({
   supportingPackagesUsersService: $SupportingPackageUserService,
   supportingPackageCommunicationService: $SupportingPackageCommunicationService,
   supportingPackageJournalEntriesService: $SupportingPackageJournalEntriesService,
-
 })
+
+export const $TaskService =new TaskService({
+  tasksManager: $TasksManager,
+  entityService: $EntityService,
+  userService: $UserService,
+  categoryService: $CategoryService,
+  labelService: $LabelService,
+  supportingPackageService: $SupportingPackageService
+})
+

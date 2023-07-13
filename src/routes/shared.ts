@@ -7,6 +7,7 @@ import { getEntityLocations } from './handlers/locations'
 import { getCategories } from './handlers/supportingPackages'
 import { getEntityUsers } from './handlers/users'
 import { getEntityLabels } from './handlers/labels'
+import { createEntityTask, getEntityTaskByUuid, getEntityTasks } from './handlers/tasks'
 
 const router = Router()
 
@@ -25,5 +26,12 @@ router.get(`/:customerXRefID/customers`, getEntityCustomers)
 router.get(`/:entityUuid/labels`, getEntityLabels)
 
 router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
+
+router.get(`/:entityUuid/tasks`, getEntityTasks)
+
+router.post(`/:entityUuid/tasks`, createEntityTask)
+
+router.get(`/:entityUuid/tasks/:taskUuid`, getEntityTaskByUuid)
+
 
 export default router

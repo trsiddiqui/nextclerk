@@ -16,6 +16,7 @@ import SupportingPackagesCommunicationsManager from './supportingPackagesCommuni
 import SupportingPackagesCommunicationsAttachmentsManager from './supportingPackagescommunicationsAttachments.model'
 import SupportingPackagesCommunicationsUsersManager from './supportingPackagescommunicationsUsers.model'
 import JournalEntriesManager from './journalEntries.model'
+import TasksManager from './tasks.model'
 
 const $LabelsManager = new LabelsManager(Knex)
 
@@ -51,6 +52,7 @@ const $SupportingPackagesCommunicationsManager = new SupportingPackagesCommunica
 
 const $JournalEntriesManager = new JournalEntriesManager(Knex)
 
+const $TasksManager = new TasksManager(Knex)
 
 export {
   LabelsManager,
@@ -86,5 +88,7 @@ export {
   $SupportingPackagesCommunicationsUsersManager,
   SupportingPackagesCommunicationsUsersManager,
   $JournalEntriesManager,
-  JournalEntriesManager
+  JournalEntriesManager,
+  $TasksManager,
+  TasksManager
 }
