@@ -24,6 +24,7 @@ export interface Task extends EntityDateWithArchive{
   isConfidential: boolean
   isRecurring: boolean
   date: Date
+  dueDate: Date
   assigneeID: number
   assignerID: number
 }
@@ -40,6 +41,7 @@ export interface TaskRequestDB {
   isConfidential: boolean
   isRecurring: boolean
   date: Date
+  dueDate: Date
   assigneeID: number
   assignerID: number
 }
@@ -54,6 +56,7 @@ export interface TaskRequest {
   isConfidential: boolean
   isRecurring: boolean
   date: Date
+  dueDate: Date
   assigneeUUID: string
   assignerUUID: string
 }

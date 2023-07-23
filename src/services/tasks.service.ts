@@ -121,24 +121,26 @@ export default class TaskService {
       identifiers: { uuids: [entityUuid] },
     })
 
-    const task = await this.#tasksManager.getTaskByUUID({
+    const taskDBResponse = await this.#tasksManager.getTaskByUUID({
       uuid: taskUuid
     })
+
+    const task = taskDBResponse[0]
 
     const assignee = await this.#userService.validateAndGetUsers({
       identifiers: {
         ids: [task.assigneeID.toString()]
       }
     })
-    const assigneeUUID = assignee.entries().next().value
-    const assigneeName = `${assignee.get(assigneeUUID).firstName}  ${assignee.get(assigneeUUID).lastName}`
+    const assigneeEntity = assignee.entries().next().value
+    const assigneeName = `${assigneeEntity[1].firstName} ${assigneeEntity[1].lastName}`
     const assigner = await this.#userService.validateAndGetUsers({
       identifiers: {
         ids: [task.assignerID.toString()]
       }
     })
-    const assignerUUID = assigner.entries().next().value
-    const assignerName = `${assigner.get(assignerUUID).firstName}  ${assigner.get(assignerUUID).lastName}`
+    const assignerEntity = assigner.entries().next().value
+    const assignerName = `${assignerEntity[1].firstName} ${assignerEntity[1].lastName}`
 
     const taskResult: TaskResponse = {
       entityName: entity.get(entityUuid).name,
@@ -149,7 +151,7 @@ export default class TaskService {
       labelUUID: task.labelUUID,
       date: task.date,
       assigneeName,
-      assigneeUUID,
+      assigneeUUID: assigneeEntity[0],
       description: task.description,
       isConfidential: task.isConfidential,
       isRecurring: task.isRecurring,
@@ -161,9 +163,139 @@ export default class TaskService {
       updatedAt: task.updatedAt,
       updatedBy: task.updatedBy,
       assignerName,
-      assignerUUID,
+      assignerUUID: assignerEntity[0],
       uuid: task.uuid,
     }
+
+    return taskResult
+  }
+
+  public async updateTaskByUuid({
+    entityUuid,
+    taskUuid,
+    task,
+    userXRefID,
+  }: {
+    entityUuid: string
+    taskUuid: string
+    task: TaskRequest
+    userXRefID: string
+  }): Promise<TaskResponse> {
+
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [entityUuid] },
+    })
+
+    const taskDBResponse = await this.#tasksManager.getTaskByUUID({
+      uuid: taskUuid
+    })
+
+    const existingTask = taskDBResponse[0]
+
+    const assignee = await this.#userService.validateAndGetUsers({
+      identifiers: {
+        ids: [existingTask.assigneeID.toString()]
+      }
+    })
+    const existingAssigneeEntity = assignee.entries().next().value
+
+    const assigner = await this.#userService.validateAndGetUsers({
+      identifiers: {
+        ids: [existingTask.assignerID.toString()]
+      }
+    })
+    const existingAssignerEntity = assigner.entries().next().value
+
+    const label = await this.#labelService.validateAndGetLabels({
+      identifiers: {
+        ids: [existingTask.labelID.toString()]
+      }
+    })
+    const existingLabelEntity = label.entries().next().value
+
+    const category = await this.#categoryService.validateAndGetCategories({
+      identifiers: {
+        ids: [existingTask.categoryID.toString()]
+      }
+    })
+    const existingCategoryEntity = category.entries().next().value
+    if (
+      task.assigneeUUID != existingAssigneeEntity[0] ||
+      task.assignerUUID != existingAssignerEntity[0] ||
+      task.categoryUUID != existingCategoryEntity[0] ||
+      task.labelUUID != existingLabelEntity[0] ||
+      task.date != existingTask.date ||
+      task.dueDate!= existingTask.dueDate ||
+      task.isConfidential != existingTask.isConfidential ||
+      task.description != existingTask.description ||
+      task.title != existingTask.title
+    )
+    {
+      const {
+        assigneeUUID,
+        assignerUUID,
+        categoryUUID,
+        labelUUID,
+        supportingPackageUUID,
+        date,
+        dueDate,
+        description,
+        isConfidential,
+        isRecurring,
+        title,
+      } = task
+
+      const entity = await this.#entityService.validateAndGetEntities({
+        identifiers: { uuids: [entityUuid] },
+      })
+
+      const category = await this.#categoryService.validateAndGetCategories({
+        identifiers: { uuids:[categoryUUID] }
+      })
+
+      const label = await this.#labelService.validateAndGetLabels({
+        identifiers: { uuids:[labelUUID] }
+      })
+
+      const assignee = await this.#userService.validateAndGetUsers({
+        identifiers: { uuids: [assigneeUUID]}
+      })
+
+      const assigner = await this.#userService.validateAndGetUsers({
+        identifiers: { uuids: [assignerUUID]}
+      })
+      let supportingPackage : Map<string, SupportingPackage>
+      if (supportingPackageUUID) {
+        supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
+          identifiers: { uuids: [supportingPackageUUID]}
+        })
+      }
+      const updatedTask = await this.#tasksManager.updateTask({
+        userXRefID,
+        identifier: {
+          taskUUID: taskUuid
+        },
+        entityID: entity.get(entityUuid).id,
+        task: {
+          date,
+          dueDate,
+          description,
+          title,
+          isConfidential,
+          isRecurring,
+          categoryID: category.get(categoryUUID).id,
+          labelID: label.get(labelUUID).id,
+          entityID: entity.get(entityUuid).id,
+          assigneeID: parseInt(assignee.get(assigneeUUID).id),
+          assignerID: parseInt(assigner.get(assignerUUID).id),
+          supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
+        }
+      })
+    }
+    const taskResult = await this.getTaskByUuid({
+      entityUuid,
+      taskUuid
+    })
 
     return taskResult
   }
@@ -180,7 +312,7 @@ export default class TaskService {
       identifiers: { uuids: [entityUuid] },
     })
 
-    const tasks = await this.#tasksManager.getTaskByParentUUID({
+    const tasks = await this.#tasksManager.getTasksByParentUUID({
       uuid: parentUuid
     })
 
@@ -191,15 +323,15 @@ export default class TaskService {
           ids: [task.assigneeID.toString()]
         }
       })
-      const assigneeUUID = assignee.entries().next().value
-      const assigneeName = `${assignee.get(assigneeUUID).firstName}  ${assignee.get(assigneeUUID).lastName}`
+      const assigneeEntity = assignee.entries().next().value
+      const assigneeName = `${assigneeEntity[1].firstName} ${assigneeEntity[1].lastName}`
       const assigner = await this.#userService.validateAndGetUsers({
         identifiers: {
           ids: [task.assignerID.toString()]
         }
       })
-      const assignerUUID = assigner.entries().next().value
-      const assignerName = `${assigner.get(assignerUUID).firstName}  ${assigner.get(assignerUUID).lastName}`
+      const assignerEntity = assigner.entries().next().value
+      const assignerName = `${assignerEntity[1].firstName} ${assignerEntity[1].lastName}`
 
       const taskResult: TaskResponse = {
         entityName: entity.get(entityUuid).name,
@@ -210,7 +342,7 @@ export default class TaskService {
         labelUUID: task.labelUUID,
         date: task.date,
         assigneeName,
-        assigneeUUID,
+        assigneeUUID: assigneeEntity[0],
         description: task.description,
         isConfidential: task.isConfidential,
         isRecurring: task.isRecurring,
@@ -222,7 +354,7 @@ export default class TaskService {
         updatedAt: task.updatedAt,
         updatedBy: task.updatedBy,
         assignerName,
-        assignerUUID,
+        assignerUUID: assignerEntity[0],
         uuid: task.uuid,
       }
       result.push(taskResult)
@@ -249,6 +381,7 @@ export default class TaskService {
       labelUUID,
       supportingPackageUUID,
       date,
+      dueDate,
       description,
       isConfidential,
       isRecurring,
@@ -290,6 +423,7 @@ export default class TaskService {
         uuid,
         parentUuid: uuid,
         date,
+        dueDate,
         description,
         title,
         isConfidential,
@@ -312,6 +446,7 @@ export default class TaskService {
             uuid: childUuid,
             parentUuid: uuid,
             date: DateTime.fromJSDate(date).plus({months: i}).toJSDate(),
+            dueDate: DateTime.fromJSDate(dueDate).plus({months: i}).toJSDate(),
             description,
             title,
             isConfidential,

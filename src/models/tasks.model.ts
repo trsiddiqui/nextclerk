@@ -33,7 +33,7 @@ export default class TasksManager {
       'entities.name as entityName',
       'entities.uuid as entityUUID',
     )
-    .where( { uuid })
+    .where('tasks.uuid', uuid)
 
     if (txn) {
       query = query.transacting(txn)
@@ -43,7 +43,7 @@ export default class TasksManager {
     return task
   }
 
-  public async getTaskByParentUUID({
+  public async getTasksByParentUUID({
     txn,
     uuid,
   }: {
@@ -65,7 +65,7 @@ export default class TasksManager {
       'entities.name as entityName',
       'entities.uuid as entityUUID',
     )
-    .where( { uuid })
+    .where('tasks.parentUuid', uuid)
 
     if (txn) {
       query = query.transacting(txn)
@@ -102,7 +102,7 @@ export default class TasksManager {
     task,
     userXRefID,
   }: {
-    entityID: string
+    entityID: number
     userXRefID: string
     task: Partial<Task>
     identifier: { taskUUID: string } | { TaskID: string }

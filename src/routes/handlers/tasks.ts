@@ -36,6 +36,27 @@ export const getEntityTaskByUuid = async (
   }
 }
 
+export const updateTask = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { entityUuid, taskUuid } = req.params
+    const userXRefID = 'testUser'
+    const updatedTask = await $TaskService.updateTaskByUuid({
+      entityUuid,
+      taskUuid,
+      task: req.body,
+      userXRefID,
+    })
+
+    res.status(200).json(updatedTask)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const createEntityTask = async (
   req: Request,
   res: Response,

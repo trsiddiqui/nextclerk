@@ -100,6 +100,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('description').nullable()
     table.boolean('isConfidential').defaultTo(false).notNullable()
     table.timestamp('date').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('dueDate').notNullable().defaultTo(knex.fn.now())
     table.boolean('isRecurring').defaultTo(false).notNullable()
     table.bigInteger('assigneeID').notNullable().references('id').inTable('public.users')
     table.bigInteger('assignerID').notNullable().references('id').inTable('public.users')
