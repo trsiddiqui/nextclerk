@@ -79,6 +79,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('journalNumber').nullable()
     table.timestamp('date').notNullable().defaultTo(knex.fn.now())
     table.boolean('isDraft').notNullable().defaultTo(true)
+    table.string('status').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')

@@ -1,13 +1,4 @@
 import {
-  EntityDate,
-  SupportingPackageUserResponse,
-  EntityDateWithDelete,
-  File,
-  SupportingPackageUserRequest,
-  SupportingPackageCommunicationRequest,
-  SupportingPackageCommunicationResponse,
-  JournalEntryRequest,
-  JournalEntryResponse,
   EntityDateWithArchive,
 } from '../types'
 
@@ -63,6 +54,7 @@ export interface TaskRequest {
 
 export interface TaskResponse extends EntityDateWithArchive{
   uuid: string
+  parentUuid: string
   entityUUID: string
   entityName: string
   categoryUUID: string
@@ -75,6 +67,8 @@ export interface TaskResponse extends EntityDateWithArchive{
   isConfidential: boolean
   isRecurring: boolean
   date: Date
+  dueDate: Date
+  status: string
   assigneeUUID: string
   assigneeName: string
   assignerUUID: string

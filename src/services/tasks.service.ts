@@ -87,6 +87,7 @@ export default class TaskService {
         label: task.label,
         labelUUID: task.labelUUID,
         date: task.date,
+        dueDate: task.dueDate,
         assigneeName,
         assigneeUUID,
         description: task.description,
@@ -102,6 +103,8 @@ export default class TaskService {
         assignerName,
         assignerUUID,
         uuid: task.uuid,
+        parentUuid: task.parentUuid,
+        status: task.status
       }
       result.push(taskResult)
     }
@@ -132,6 +135,7 @@ export default class TaskService {
         ids: [task.assigneeID.toString()]
       }
     })
+
     const assigneeEntity = assignee.entries().next().value
     const assigneeName = `${assigneeEntity[1].firstName} ${assigneeEntity[1].lastName}`
     const assigner = await this.#userService.validateAndGetUsers({
@@ -142,14 +146,26 @@ export default class TaskService {
     const assignerEntity = assigner.entries().next().value
     const assignerName = `${assignerEntity[1].firstName} ${assignerEntity[1].lastName}`
 
+    let supportingPackageEntity
+    if ( task.supportingPackageID) {
+      const supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
+        identifiers: {
+          ids: [task.supportingPackageID.toString()]
+        }
+      })
+      supportingPackageEntity = supportingPackage.entries().next().value
+    }
+
     const taskResult: TaskResponse = {
       entityName: entity.get(entityUuid).name,
       entityUUID: entity.get(entityUuid).uuid,
+      supportingPackageUUID: supportingPackageEntity ? supportingPackageEntity[0] : null,
       categoryName: task.categoryName,
       categoryUUID: task.categoryUUID,
       label: task.label,
       labelUUID: task.labelUUID,
       date: task.date,
+      dueDate: task.dueDate,
       assigneeName,
       assigneeUUID: assigneeEntity[0],
       description: task.description,
@@ -165,6 +181,8 @@ export default class TaskService {
       assignerName,
       assignerUUID: assignerEntity[0],
       uuid: task.uuid,
+      parentUuid: task.parentUuid,
+      status: task.status,
     }
 
     return taskResult
@@ -218,6 +236,7 @@ export default class TaskService {
         ids: [existingTask.categoryID.toString()]
       }
     })
+
     const existingCategoryEntity = category.entries().next().value
     if (
       task.assigneeUUID != existingAssigneeEntity[0] ||
@@ -341,6 +360,7 @@ export default class TaskService {
         label: task.label,
         labelUUID: task.labelUUID,
         date: task.date,
+        dueDate: task.dueDate,
         assigneeName,
         assigneeUUID: assigneeEntity[0],
         description: task.description,
@@ -356,6 +376,8 @@ export default class TaskService {
         assignerName,
         assignerUUID: assignerEntity[0],
         uuid: task.uuid,
+        parentUuid: task.parentUuid,
+        status: task .status
       }
       result.push(taskResult)
     }
@@ -438,15 +460,21 @@ export default class TaskService {
     })
 
     if (isRecurring) {
-      const { months } = DateTime.fromJSDate(date).diff(entity.get(entityUuid).endOfFinancialYear, 'months').toObject()
-      for (let i = 1; i < months ; i++ ) {
+
+      const endDate = entity.get(entityUuid).endOfFinancialYear
+      const endDateFormatted = DateTime.fromISO(new Date(endDate).toISOString())
+      const dateFormatted = DateTime.fromISO(new Date(date).toISOString())
+      const dueDateFormatted = DateTime.fromISO(new Date(dueDate).toISOString())
+      const { months } = endDateFormatted.diff( dateFormatted,'months').toObject()
+      const FixedDiffMonths = Math.floor(months)
+      for (let i = 1; i < FixedDiffMonths ; i++ ) {
         const childUuid = v4()
         await this.#tasksManager.createTask({
           task: {
             uuid: childUuid,
             parentUuid: uuid,
-            date: DateTime.fromJSDate(date).plus({months: i}).toJSDate(),
-            dueDate: DateTime.fromJSDate(dueDate).plus({months: i}).toJSDate(),
+            date,
+            dueDate: dueDateFormatted.plus( { months: i}).toJSDate(), // DateTime.fromJSDate(dueDate).plus({months: i}).toJSDate(),
             description,
             title,
             isConfidential,
