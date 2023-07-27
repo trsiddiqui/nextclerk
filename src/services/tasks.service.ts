@@ -69,15 +69,16 @@ export default class TaskService {
           ids: [task.assigneeID.toString()]
         }
       })
-      const assigneeUUID = assignee.entries().next().value
-      const assigneeName = `${assignee.get(assigneeUUID).firstName}  ${assignee.get(assigneeUUID).lastName}`
+
+      const assigneeEntity = assignee.entries().next().value
+      const assigneeName = `${assigneeEntity[1].firstName} ${assigneeEntity[1].lastName}`
       const assigner = await this.#userService.validateAndGetUsers({
         identifiers: {
           ids: [task.assignerID.toString()]
         }
       })
-      const assignerUUID = assigner.entries().next().value
-      const assignerName = `${assigner.get(assignerUUID).firstName}  ${assigner.get(assignerUUID).lastName}`
+      const assignerEntity = assigner.entries().next().value
+      const assignerName = `${assignerEntity[1].firstName} ${assignerEntity[1].lastName}`
 
       const taskResult: TaskResponse = {
         entityName: entity.get(entityUuid).name,
@@ -89,7 +90,7 @@ export default class TaskService {
         date: task.date,
         dueDate: task.dueDate,
         assigneeName,
-        assigneeUUID,
+        assigneeUUID: assigneeEntity[0],
         description: task.description,
         isConfidential: task.isConfidential,
         isRecurring: task.isRecurring,
@@ -101,7 +102,7 @@ export default class TaskService {
         updatedAt: task.updatedAt,
         updatedBy: task.updatedBy,
         assignerName,
-        assignerUUID,
+        assignerUUID: assignerEntity[0],
         uuid: task.uuid,
         parentUuid: task.parentUuid,
         status: task.status

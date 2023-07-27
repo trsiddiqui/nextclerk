@@ -235,12 +235,11 @@ export default class TasksManager {
         'entities.uuid as entityUUID',
         'supporting_packages.status as status',
       )
-      .where( { entityID })
+      .where('tasks.entityID',entityID)
 
     if (txn) {
       query = query.transacting(txn)
     }
-
     const supportingPackages = await query
     return supportingPackages
   }
