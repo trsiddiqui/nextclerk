@@ -24,9 +24,9 @@ export const getEntityTaskByUuid = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { entityUuid, taskUuid } = req.params
+    const { customerXRefID, taskUuid } = req.params
     const task = await $TaskService.getTaskByUuid({
-      entityUuid,
+      entityUuid: customerXRefID,
       taskUuid
     })
 
@@ -42,10 +42,10 @@ export const updateTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { entityUuid, taskUuid } = req.params
+    const { customerXRefID, taskUuid } = req.params
     const userXRefID = 'testUser'
     const updatedTask = await $TaskService.updateTaskByUuid({
-      entityUuid,
+      entityUuid: customerXRefID,
       taskUuid,
       task: req.body,
       userXRefID,
@@ -63,10 +63,10 @@ export const createEntityTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { entityUuid } = req.params
+    const { customerXRefID } = req.params
     const userXRefID = 'testUser'
     const entityTasks = await $TaskService.createTask({
-      entityUuid,
+      entityUuid: customerXRefID,
       task: req.body,
       userXRefID
     })
