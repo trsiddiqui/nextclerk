@@ -104,7 +104,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('date').notNullable().defaultTo(knex.fn.now())
     table.timestamp('dueDate').notNullable().defaultTo(knex.fn.now())
     table.boolean('isRecurring').defaultTo(false).notNullable()
-    table.bigInteger('assigneeID').notNullable().references('id').inTable('public.users')
+    table.bigInteger('assigneeID').references('id').inTable('public.users')
     table.bigInteger('assignerID').notNullable().references('id').inTable('public.users')
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())

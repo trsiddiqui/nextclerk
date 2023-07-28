@@ -68,9 +68,9 @@ export interface TaskResponse extends EntityDateWithArchive{
   isRecurring: boolean
   date: Date
   dueDate: Date
-  status: string
-  assigneeUUID: string
-  assigneeName: string
+  status: string | null
+  assigneeUUID: string | null
+  assigneeName: string | null
   assignerUUID: string
   assignerName: string
 }
