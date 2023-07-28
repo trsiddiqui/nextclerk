@@ -27,7 +27,7 @@ router.get(`/:entityUuid/labels`, getEntityLabels)
 
 router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 
-router.get(`/:entityUuid/tasks`, getEntityTasks)
+router.get(`/:customerXRefID/tasks`, getEntityTasks)
 
 router.post(`/:entityUuid/tasks`, createEntityTask)
 

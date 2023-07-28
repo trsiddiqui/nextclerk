@@ -7,9 +7,9 @@ export const getEntityTasks = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { entityUuid } = req.params
+    const { customerXRefID } = req.params
     const entityTasks = await $TaskService.getTasks({
-      entityUuid
+      entityUuid : customerXRefID
     })
 
     res.status(200).json(entityTasks)
