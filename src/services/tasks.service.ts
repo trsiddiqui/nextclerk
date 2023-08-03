@@ -495,11 +495,10 @@ export default class TaskService {
 
       const endDate = entity.get(entityUuid).endOfFinancialYear
       const endDateFormatted = DateTime.fromISO(new Date(endDate).toISOString())
-      const dateFormatted = DateTime.fromISO(new Date(date).toISOString())
       const dueDateFormatted = DateTime.fromISO(new Date(dueDate).toISOString())
-      const { months } = endDateFormatted.diff( dateFormatted,'months').toObject()
+      const { months } = endDateFormatted.diff( dueDateFormatted,'months').toObject()
       const FixedDiffMonths = Math.floor(months)
-      for (let i = 1; i < FixedDiffMonths ; i++ ) {
+      for (let i = 1; i <= FixedDiffMonths ; i++ ) {
         const childUuid = v4()
         await this.#tasksManager.createTask({
           task: {
