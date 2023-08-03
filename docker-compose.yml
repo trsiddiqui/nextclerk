@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 
 services:
   # proxy:
@@ -47,7 +47,7 @@ services:
     image: redis:6.2-alpine
     restart: always
     ports:
-      - '6379:6379'
+      - "6379:6379"
     command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - redis:/data
@@ -55,7 +55,23 @@ services:
     image: trsiddiqui1989/ej2-spreadsheet-web-services
     restart: always
     ports:
-      - '3002:3002'
+      - "3002:3002"
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: host.docker.internal
+      KC_DB_URL_DATABASE: dev
+      KC_DB_PASSWORD: P@55word12345
+      KC_DB_USERNAME: dev
+      KC_DB_SCHEMA: public
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8086:8080"
+    networks:
+      - backend
 
 networks:
   backend:
