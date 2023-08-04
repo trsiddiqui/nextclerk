@@ -35,6 +35,8 @@ services:
     restart: always
     image: postgres:13-buster
     container_name: postgres
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     environment:
@@ -62,16 +64,21 @@ services:
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: host.docker.internal
-      KC_DB_URL_DATABASE: dev
+      KC_DB_URL_DATABASE: identity
       KC_DB_PASSWORD: P@55word12345
       KC_DB_USERNAME: dev
       KC_DB_SCHEMA: public
+      KC_HOSTNAME: localhost
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./Keycloak/realm.json:/opt/keycloak/data/import/realm.json
     ports:
       - "8086:8080"
     networks:
       - backend
+    depends_on:
+      - postgres
 
 networks:
   backend:
