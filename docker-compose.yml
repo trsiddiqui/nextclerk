@@ -71,6 +71,8 @@ services:
       KC_HOSTNAME: localhost
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+    security_opt:
+      - seccomp:unconfined
     volumes:
       - ./Keycloak/realm.json:/opt/keycloak/data/import/realm.json
     ports:
