@@ -136,19 +136,17 @@ export default class TasksManager {
   public async archiveTask({
     entityID,
     identifier,
-    task,
     userXRefID,
   }: {
     entityID: string
     userXRefID: string
-    task: Partial<Task>
     identifier: { taskUUID: string } | { TaskID: string }
   }): Promise<Task> {
+    console.log(identifier)
     let query = this.#knex
       .withSchema('public')
       .table('tasks')
       .update<Task>({
-        ...task,
         archivedAt: DateTime.utc(),
         archivedBy: userXRefID,
       })
@@ -161,6 +159,8 @@ export default class TasksManager {
     if ('TaskID' in identifier) {
       query = query.where('id', identifier.TaskID)
     }
+
+    console.log(query.toSQL())
 
     const [taskResponse] = await query.returning<Task[]>('*')
     return taskResponse

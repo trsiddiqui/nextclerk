@@ -7,7 +7,7 @@ import { getEntityLocations } from './handlers/locations'
 import { getCategories } from './handlers/supportingPackages'
 import { getEntityUsers } from './handlers/users'
 import { getEntityLabels } from './handlers/labels'
-import { createEntityTask, getEntityTaskByUuid, getEntityTasks, updateTask } from './handlers/tasks'
+import { createEntityTask, deleteTask, getEntityTaskByUuid, getEntityTasks, updateTask } from './handlers/tasks'
 
 const router = Router()
 
@@ -34,6 +34,8 @@ router.post(`/:entityUuid/tasks`, createEntityTask)
 router.get(`/:entityUuid/tasks/:taskUuid`, getEntityTaskByUuid)
 
 router.put(`/:entityUuid/tasks/:taskUuid`, updateTask)
+
+router.delete(`/:entityUuid/tasks/:taskUuid`, deleteTask)
 
 
 export default router
