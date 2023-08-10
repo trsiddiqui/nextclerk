@@ -2,13 +2,13 @@ import { S3 } from 'aws-sdk'
 import fs from 'fs'
 import axios from 'axios'
 import { v4 } from 'uuid'
-import path from 'path'
 import { BUCKET_NAME, DRIVE_ID } from '@/config'
 import { $FilesManager } from '@/models'
 import { $EntityService, $FileService } from './index'
 import { checkBucket, initBucket } from '@/utils/s3/checkBucket'
 import { getAccessToken } from '@/utils/util'
 import { File, FileRequest } from '@/types'
+import path from 'node:path'
 
 // TODO: Refactor this
 // Use S3 service to get from S3 and then call uploadToSharepoint to store in sharepoint
@@ -25,13 +25,16 @@ export const setExistingFileAsMaster = async ({
     },
   })
 
-  await $FileService.validateAndGetFiles({
+  const files = await $FileService.validateAndGetFiles({
     identifiers: {
       uuids: [fileUUID],
     },
   })
 
-  const fileName = `${fileUUID}.xlsx`
+  const file = files.get(fileUUID)
+  const extension = file.name.substring(file.name.lastIndexOf('.'))
+
+  const fileName = `${fileUUID}${extension}`
 
   const urlObject = await getMasterFileLinksFromSharepoint({
     customerFolderId: entities.get(customerXRefID).folderId,

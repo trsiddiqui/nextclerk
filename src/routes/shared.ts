@@ -27,13 +27,13 @@ router.get(`/:entityUuid/labels`, getEntityLabels)
 
 router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 
-router.get(`/:entityUuid/tasks`, getEntityTasks)
+router.get(`/:customerXRefID/tasks`, getEntityTasks)
 
-router.post(`/:entityUuid/tasks`, createEntityTask)
+router.post(`/:customerXRefID/tasks`, createEntityTask)
 
-router.get(`/:entityUuid/tasks/:taskUuid`, getEntityTaskByUuid)
+router.get(`/:customerXRefID/tasks/:taskUuid`, getEntityTaskByUuid)
 
-router.put(`/:entityUuid/tasks/:taskUuid`, updateTask)
+router.put(`/:customerXRefID/tasks/:taskUuid`, updateTask)
 
 router.delete(`/:entityUuid/tasks/:taskUuid`, deleteTask)
 

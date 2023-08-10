@@ -133,7 +133,7 @@ export default class TasksManager {
     return taskResponse
   }
 
-  public async archiveTask({
+  public async archiveTaskByIdentifier({
     entityID,
     identifier,
     userXRefID,
