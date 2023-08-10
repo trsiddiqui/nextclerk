@@ -528,6 +528,46 @@ export default class TaskService {
     })
   }
 
+  public async deleteTaskByUuid({
+    entityUuid,
+    taskUuid,
+    userXRefID,
+  }: {
+    entityUuid: string
+    taskUuid: string
+    userXRefID: string
+  }): Promise<TaskResponse> {
+
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { uuids: [entityUuid] },
+    })
+
+    const taskDBResponse = await this.#tasksManager.getTaskByUUID({
+      uuid: taskUuid
+    })
+
+    const existingTask = taskDBResponse[0]
+
+    if(!existingTask) {
+      throw new Error("No Task with given UUID exist")
+    }
+
+    await this.#tasksManager.archiveTask({
+      entityID: entity.get(entityUuid).id.toString(),
+      identifier: {
+        taskUUID: existingTask.uuid
+      },
+      userXRefID,
+    })
+
+    const taskResult = await this.getTaskByUuid({
+      entityUuid,
+      taskUuid
+    })
+
+    return taskResult
+  }
+
 
 
 }

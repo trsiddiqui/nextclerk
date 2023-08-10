@@ -77,4 +77,24 @@ export const createEntityTask = async (
   }
 }
 
+export const deleteTask = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { entityUuid, taskUuid } = req.params
+    const userXRefID = 'testUser'
+    const deleteTask = await $TaskService.deleteTaskByUuid({
+      entityUuid,
+      taskUuid,
+      userXRefID,
+    })
+
+    res.status(204).json(deleteTask)
+  } catch (error) {
+    next(error)
+  }
+}
+
 
