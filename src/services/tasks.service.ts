@@ -552,7 +552,7 @@ export default class TaskService {
       throw new Error("No Task with given UUID exist")
     }
 
-    await this.#tasksManager.archiveTask({
+    await this.#tasksManager.archiveTaskByIdentifier({
       entityID: entity.get(entityUuid).id.toString(),
       identifier: {
         taskUUID: existingTask.uuid

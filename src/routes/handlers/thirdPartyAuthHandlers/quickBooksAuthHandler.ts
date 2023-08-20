@@ -5,7 +5,7 @@ import {
   TEMP_QUICKBOOKS_CLIENT_ID,
   TEMP_QUICKBOOKS_CLIENT_SECRET,
 } from '@/config'
-import { $CustomerAuthDetailsService } from '@/services'
+import { $CustomerAuthDetailsService, $IntegrationService } from '@/services'
 import { QuickbooksAuthTokenResponse } from '@/types/http/quickbookAuthResponse'
 import { redis } from '@/server'
 
@@ -35,7 +35,10 @@ export const quickBookAuthRequestHandler = async (
     })
 
     const authUri = oauthClient.authorizeUri({
-      scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
+      scope: [
+        OAuthClient.scopes.Accounting,
+        // OAuthClient.scopes.OpenId
+      ],
       state: 'testState',
     })
 
@@ -50,6 +53,13 @@ export const quickBookAuthResponseHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const result = await redis.get(req.query.realmId)
+  if (result) {
+    await $IntegrationService.syncIntegration({
+      customerXRefID: '',
+      realmId: req.query.realmId
+    })
+  }
   const customerAuthDetails =
     await $CustomerAuthDetailsService.getCustomerAuthDetailsByApplicationID({
       applicationID: req.query.realmId,

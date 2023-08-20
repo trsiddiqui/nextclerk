@@ -3,7 +3,6 @@ import validateEnv from '../src/utils/validateEnv'
 import Redis from 'ioredis'
 import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from './config'
 
-console.log('here')
 
 validateEnv()
 
