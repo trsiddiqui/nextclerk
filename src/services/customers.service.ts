@@ -1,6 +1,6 @@
 
 import { CustomersManager } from '../models'
-import { Customer } from '../types'
+import { Customer, CustomerRequest } from '../types'
 import EntityService from './entities.service'
 
 export default class CustomerService {
@@ -55,6 +55,19 @@ export default class CustomerService {
     })
 
     return Customers
+  }
+
+  public async upsertCustomers({ customers, userXRefID, customerXRefID }: { customers: CustomerRequest[], userXRefID: string, customerXRefID: string }): Promise<Customer[]> {
+    for (const customer of customers) {
+      await this.#customersManager.upsertCustomers({
+        customer,
+        userXRefID
+      })
+    }
+
+    const allCustomers = await this.getCustomers({ customerXRefID })
+
+    return allCustomers
   }
 
 }

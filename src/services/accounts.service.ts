@@ -1,5 +1,5 @@
 import { AccountsManager } from '../models'
-import { Account } from '../types'
+import { Account, AccountRequest } from '../types'
 import EntityService from './entities.service'
 
 export default class AccountService {
@@ -47,4 +47,18 @@ export default class AccountService {
 
     return accounts
   }
+
+  public async upsertAccounts({ accounts, userXRefID, customerXRefID }: { accounts: AccountRequest[], userXRefID: string, customerXRefID: string }): Promise<Account[]> {
+    for (const account of accounts) {
+      await this.#accountsManager.upsertAccounts({
+        account,
+        userXRefID
+      })
+    }
+
+    const allAccounts = await this.getAccounts({ customerXRefID })
+
+    return allAccounts
+  }
+
 }

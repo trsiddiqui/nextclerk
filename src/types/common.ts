@@ -6,8 +6,8 @@ export interface EntityDate {
 }
 
 export interface EntityDateWithArchive extends EntityDate {
-  archivedAt: Date
-  archivedBy: string
+  archivedAt?: Date
+  archivedBy?: string
 }
 
 export interface EntityDateWithDelete extends EntityDate {

@@ -76,6 +76,8 @@ export const $DepartmentService = new DepartmentService({
 
 export const $IntegrationService = new IntegrationService({
   entityService: $EntityService,
+  accountService: $AccountService,
+  customerService: $CustomerService
 })
 
 export const $UserService = new UserService({

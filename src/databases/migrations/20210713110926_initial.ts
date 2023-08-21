@@ -275,7 +275,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
     table.string('archivedBy')
-    table.unique(['entityID', 'integrationID', 'uuid'])
+    table.unique(['entityID', 'integrationID', 'internalID'])
   })
 
   await knex.schema.createTable('accounts', (table) => {
@@ -286,6 +286,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('internalID').notNullable()
     table.string('accountNumber').notNullable()
     table.string('label').notNullable()
+    table.float('initialBalance',2).defaultTo(0)
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')

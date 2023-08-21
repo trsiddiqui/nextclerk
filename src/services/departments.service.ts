@@ -86,8 +86,6 @@ export default class DepartmentService {
 
     return result
 
-
-
   }
 
 }
