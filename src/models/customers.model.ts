@@ -67,7 +67,7 @@ export default class CustomersManager extends RelationsManager {
     >({
       relationEntity: customer,
       tableName: 'customers',
-      keys: ['entityID', 'integrationID', 'uuid'],
+      keys: ['entityID', 'integrationID', 'internalID'],
       userXRefID,
     })
 

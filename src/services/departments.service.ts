@@ -57,4 +57,35 @@ export default class DepartmentService {
     return departments
   }
 
+  public async upsertDepartments({
+    customerXRefID,
+    departments
+  }: {
+    customerXRefID: string
+    departments: Partial<Department>[]
+  }): Promise<Department[]> {
+
+    const userXRefID = 'SYSTEM'
+
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: {
+        uuids: [customerXRefID]
+      }
+    })
+
+    const result : Department[] = []
+
+    for (const department of departments) {
+      const upsertedDepartment = await this.#departmentsManager.upsertDepartments({
+        entityID: entity.get(customerXRefID).id,
+        department,
+        userXRefID
+      })
+      result.push(upsertedDepartment)
+    }
+
+    return result
+
+  }
+
 }

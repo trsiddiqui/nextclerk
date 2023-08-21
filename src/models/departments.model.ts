@@ -55,17 +55,19 @@ export default class DepartmentsManager extends RelationsManager {
   }
 
   public async upsertDepartments({
-    customer,
+    entityID,
     userXRefID,
+    department
   }: {
-    customer: Partial<Department>
+    entityID:  number
     userXRefID: string
+    department: Partial<Department>
   }): Promise<Department> {
     const integrationEntity = await super.upsertRelations<
       Department,
       Department
     >({
-      relationEntity: customer,
+      relationEntity: department,
       tableName: 'departments',
       keys: ['entityID', 'integrationID', 'uuid'],
       userXRefID,

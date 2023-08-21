@@ -8,12 +8,17 @@ export const syncIntegrationData = async (
 ): Promise<void> => {
   try {
     const { customerXRefID } = req.params
-    const authUri = await $IntegrationService.syncIntegrationData({
+    const realmId = '4620816365325240560'
+    const userXRefID = 'test User'
+    await $IntegrationService.syncIntegrationData({
       customerXRefID,
+      realmId,
+      userXRefID
     })
 
     // Redirect the authUri
-    res.redirect(authUri)
+   // res.redirect(authUri)
+    res.sendStatus(200)
 
     // res.status(200)
   } catch (error) {

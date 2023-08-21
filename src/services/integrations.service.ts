@@ -1,12 +1,88 @@
 import OAuthClient from 'intuit-oauth'
+import { v4 } from 'uuid'
+import axios from 'axios'
 import EntityService from './entities.service'
 import { TEMP_QUICKBOOKS_CLIENT_ID, TEMP_QUICKBOOKS_CLIENT_SECRET } from '../config'
+import { redis } from '@/server'
+import { AccountRequest, CustomerRequest, QuickBookAccount, QuickBookCustomer } from '@/types'
+import AccountService from './accounts.service'
+import CustomerService from './customers.service'
 
 export default class IntegrationService {
   #entityService: EntityService
 
-  constructor({ entityService }: { entityService: EntityService }) {
+  #accountService: AccountService
+
+  #customerService: CustomerService
+
+  constructor({
+    entityService,
+    accountService,
+    customerService
+  }: {
+    entityService: EntityService
+    accountService: AccountService
+    customerService: CustomerService
+  }) {
     this.#entityService = entityService
+    this.#accountService = accountService
+    this.#customerService = customerService
+  }
+
+  private parseQBAccountData({
+    entityID,
+    accounts,
+    userXRefID
+  }: {
+    entityID: string
+    accounts: QuickBookAccount[]
+    userXRefID: string
+
+  }) : AccountRequest[] {
+    const parsedAccounts: AccountRequest [] = []
+    for( const acc of accounts) {
+      const parsedAccount : AccountRequest = {
+        uuid : v4(),
+        accountNumber : acc.Id,
+        integrationID : 1,
+        entityID : entityID,
+        internalID : parseInt(acc.Id),
+        label : acc.FullyQualifiedName,
+        initialBalance : acc.CurrentBalance,
+        createdBy :userXRefID,
+        updatedBy :userXRefID,
+
+
+      }
+      parsedAccounts.push(parsedAccount)
+    }
+    return parsedAccounts
+  }
+
+  private parseQBCustomerData({
+    entityID,
+    customers,
+    userXRefID
+  }: {
+    entityID: string
+    customers: QuickBookCustomer[]
+    userXRefID: string
+
+  }) : CustomerRequest[] {
+    const parsedCustomers: CustomerRequest [] = []
+    for( const customer of customers) {
+      const parsedCustomer : CustomerRequest = {
+        uuid : v4(),
+        integrationID : 1,
+        entityID : entityID,
+        internalID : parseInt(customer.Id),
+        label : customer.FullyQualifiedName,
+        createdBy :userXRefID,
+        updatedBy :userXRefID,
+      }
+      parsedCustomers.push(parsedCustomer)
+    }
+    return parsedCustomers
   }
 
   public async thirdPartyAuth({ customerXRefID }: { customerXRefID: string }): Promise<any> {
@@ -94,41 +170,121 @@ export default class IntegrationService {
     //   })
   }
 
-  public async syncIntegrationData({ customerXRefID }: { customerXRefID: string }): Promise<any> {
-    await this.#entityService.validateAndGetEntities({
+  public async syncIntegrationData(
+    { customerXRefID,
+      realmId,
+      userXRefID
+    }:
+    {
+      customerXRefID: string
+      realmId: string
+      userXRefID: string
+    }): Promise<any> {
+    const entity = await this.#entityService.validateAndGetEntities({
       identifiers: { uuids: [customerXRefID] },
     })
 
+    let oauthClient = null
+    // TODO: get from table based on customer xrefid
+    const token = await redis.get(realmId)
+    const axiosConfig = {
+      headers: {
+        "content-type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      }
+    }
+
+    const accountData = await axios.get(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=select * from account&minorversion=65`,
+      axiosConfig
+    )
+
+    const customerData = await axios.get(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=select * from customer&minorversion=65`,
+      axiosConfig
+    )
+
+    const { Account } = accountData.data.QueryResponse
+    const { Customer } = customerData.data.QueryResponse
+
+    console.log(Customer)
+
+    const accounts = this.parseQBAccountData({
+      accounts: Account,
+      entityID: entity.get(customerXRefID).id.toString(),
+      userXRefID
+    })
+
+    const customers = this.parseQBCustomerData({
+      customers: Customer,
+      entityID: entity.get(customerXRefID).id.toString(),
+      userXRefID
+    })
+
+    await this.#accountService.upsertAccounts({
+      accounts,
+      customerXRefID,
+      userXRefID
+    })
+
+    await this.#customerService.upsertCustomers({
+      customers,
+      customerXRefID,
+      userXRefID
+    })
+
+    // const classData = await axios.get(
+    //   `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=select * from Class&minorversion=65`,
+    //   axiosConfig
+    // )
+
+    // const companyData = await axios.get(
+    //   `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=select * from CompanyInfo&minorversion=65`,
+    //   axiosConfig
+    // )
+
+  }
+
+  public async syncIntegration({ customerXRefID, realmId }: { customerXRefID: string, realmId: string }): Promise<any> {
+    // await this.#entityService.validateAndGetEntities({
+    //   identifiers: { uuids: [customerXRefID] },
+    // })
+
     let customers, accounts, departments, locations
+
+
+    const result = await redis.get(realmId)
 
     let oauth2_token_json = null
 
     let oauthClient = null
 
-    oauthClient = new OAuthClient({
-      clientId: TEMP_QUICKBOOKS_CLIENT_ID,
-      clientSecret: TEMP_QUICKBOOKS_CLIENT_SECRET,
-      environment: 'sandbox',
-      redirectUri: 'http://localhost:3000/callback',
-    })
+    // oauthClient = new OAuthClient({
+    //   clientId: TEMP_QUICKBOOKS_CLIENT_ID,
+    //   clientSecret: TEMP_QUICKBOOKS_CLIENT_SECRET,
+    //   environment: 'sandbox',
+    //   redirectUri: 'http://localhost:3000/callback',
+    // })
 
-    const authUri = oauthClient.authorizeUri({
-      scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
-      state: 'testState',
-    })
+    // const authUri = oauthClient.authorizeUri({
+    //   scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
+    //   state: 'testState',
+    // })
 
     // return authUri
 
-    oauthClient
-      .createToken(authUri)
-      .then(function (authResponse) {
-        console.log(authResponse.body)
-        oauth2_token_json = JSON.stringify(authResponse.getJson(), null, 2)
-        console.log(oauth2_token_json)
-      })
-      .catch(function (e) {
-        console.error(e)
-      })
+    // oauthClient
+    //   .createToken(authUri)
+    //   .then(function (authResponse) {
+    //     console.log(authResponse.body)
+    //     oauth2_token_json = JSON.stringify(authResponse.getJson(), null, 2)
+    //     console.log(oauth2_token_json)
+    //   })
+    //   .catch(function (e) {
+    //     console.error(e)
+    //   })
+
+    const x = redis.get(realmId)
 
     oauthClient
       .makeApiCall({
@@ -137,6 +293,7 @@ export default class IntegrationService {
         headers: {
           'Content-Type': 'application/json',
         },
+        accesstoken: result
       })
       .then(function (response) {
         console.log('The API response is  : ' + response)

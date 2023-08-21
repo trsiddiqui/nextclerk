@@ -8,3 +8,14 @@ export interface Department extends EntityDateWithArchive {
   uuid: string
   label: string
 }
+
+export interface DepartmentRequest  {
+  internalID: number
+  integrationID: number
+  entityID: string
+  accountNumber: string
+  uuid: string
+  label: string
+  createdBy: string
+  updatedBy: string
+}
