@@ -46,9 +46,11 @@ export default class IntegrationService {
         accountNumber : acc.Id,
         integrationID : 1,
         entityID : entityID,
+        parentID: acc.ParentRef?.value ? parseInt(acc.ParentRef?.value) : null,
         internalID : parseInt(acc.Id),
         label : acc.FullyQualifiedName,
         initialBalance : acc.CurrentBalance,
+        currentBalance : acc.CurrentBalance,
         createdBy :userXRefID,
         updatedBy :userXRefID,
 

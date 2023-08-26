@@ -288,6 +288,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('accountNumber').notNullable()
     table.string('label').notNullable()
     table.float('initialBalance',2).defaultTo(0)
+    table.float('latestBalance',2).defaultTo(0)
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')

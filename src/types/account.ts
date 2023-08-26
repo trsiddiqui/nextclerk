@@ -15,10 +15,12 @@ export interface AccountRequest  {
   internalID: number
   integrationID: number
   entityID: string
+  parentID?: number
   accountNumber: string
   uuid: string
   label: string
   initialBalance: number
+  currentBalance: number
   createdBy: string
   updatedBy: string
 }
