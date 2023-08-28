@@ -53,6 +53,7 @@ export interface TaskRequest {
 }
 
 export interface TaskResponse extends EntityDateWithArchive{
+  id?: number
   uuid: string
   parentUuid: string
   entityUUID: string

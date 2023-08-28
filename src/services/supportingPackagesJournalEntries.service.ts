@@ -85,6 +85,9 @@ export default class SupportingPackageJournalEntriesService {
         referenceCode,
         cellLink,
       } = journalEntry
+      if (!accountUUID) {
+        continue
+      }
 
       if (creditAmount && debitAmount) {
         throw new HttpException(

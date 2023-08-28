@@ -313,7 +313,8 @@ export default class SupportingPackageService {
       users,
       files,
       communications,
-      journalEntries
+      journalEntries,
+      taskID,
     } = supportingPackageRequest
 
     const [label, category, usersRequest, attachment] = await Promise.all([
@@ -342,6 +343,7 @@ export default class SupportingPackageService {
     const uuid = v4()
     const sp = {
       title,
+      taskID,
       number,
       entityID: 1,
       categoryID: category.get(categoryUUID)?.id,

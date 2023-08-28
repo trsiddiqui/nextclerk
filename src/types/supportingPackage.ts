@@ -19,6 +19,7 @@ export interface SupportingPackageRequest {
   date: Date
   isDraft: boolean
   journalNumber?: string
+  taskID?: string
   users: SupportingPackageUserRequest[]
   files: supportingPackageFile[]
   communications: SupportingPackageCommunicationRequest[]
