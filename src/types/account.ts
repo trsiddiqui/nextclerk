@@ -20,7 +20,7 @@ export interface AccountRequest  {
   uuid: string
   label: string
   initialBalance: number
-  currentBalance: number
+  latestBalance: number
   createdBy: string
   updatedBy: string
 }

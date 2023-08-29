@@ -97,6 +97,11 @@ export const quickBookAuthResponseHandler = async (
         'EX',
         authResponse.token.expires_in
       )
+      await $IntegrationService.syncIntegrationData({
+        customerXRefID: 'f590257b-a925-45d3-b980-26ff13faf64e',
+        realmId: req.query.realmId,
+        userXRefID: 'test user'
+      })
       res.send(200)
     })
     .catch(function (e) {

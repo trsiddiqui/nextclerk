@@ -50,7 +50,7 @@ export default class IntegrationService {
         internalID : parseInt(acc.Id),
         label : acc.FullyQualifiedName,
         initialBalance : acc.CurrentBalance,
-        currentBalance : acc.CurrentBalance,
+        latestBalance : acc.CurrentBalance,
         createdBy :userXRefID,
         updatedBy :userXRefID,
 

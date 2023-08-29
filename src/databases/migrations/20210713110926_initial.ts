@@ -283,7 +283,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigIncrements('id').notNullable().primary()
     table.bigInteger('integrationID').notNullable().references('id').inTable('public.integrations')
     table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
-    table.bigInteger('parentID').nullable().references('id').inTable('public.accounts')
+    table.bigInteger('parentID').nullable()
     table.string('uuid').notNullable()
     table.string('internalID').notNullable()
     table.string('accountNumber').notNullable()
