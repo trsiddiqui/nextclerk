@@ -2,12 +2,14 @@ import OAuthClient from 'intuit-oauth'
 import { NextFunction, Request, Response } from 'express'
 import {
   QUICKBOOKS_CALLBACK_API,
+  QUICKBOOKS_CALLBACK_API_PROD,
   TEMP_QUICKBOOKS_CLIENT_ID,
   TEMP_QUICKBOOKS_CLIENT_SECRET,
 } from '@/config'
-import { $CustomerAuthDetailsService } from '@/services'
+import { $CustomerAuthDetailsService, $IntegrationService } from '@/services'
 import { QuickbooksAuthTokenResponse } from '@/types/http/quickbookAuthResponse'
 import { redis } from '@/server'
+import { env } from 'process'
 
 // TO BE CALLED FOR ENABLING AUTH
 // CLIENTID and CLIENTSECRET will be POSTed and stored in a separate call
@@ -31,15 +33,19 @@ export const quickBookAuthRequestHandler = async (
       clientId: customerAuthDetails.clientID,
       clientSecret: customerAuthDetails.clientSecret,
       environment: 'sandbox',
-      redirectUri: QUICKBOOKS_CALLBACK_API,
+      redirectUri: QUICKBOOKS_CALLBACK_API_PROD
     })
 
     const authUri = oauthClient.authorizeUri({
-      scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
+      scope: [
+        OAuthClient.scopes.Accounting,
+        // OAuthClient.scopes.OpenId
+      ],
       state: 'testState',
     })
+    res.set('Access-Control-Allow-Origin', '*')
 
-    res.redirect(authUri)
+    res.send(authUri)
   } catch (error) {
     next(error)
   }
@@ -50,6 +56,16 @@ export const quickBookAuthResponseHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const result = await redis.get(req.query.realmId)
+  if (result) {
+    await $IntegrationService.syncIntegrationData({
+      customerXRefID: 'f590257b-a925-45d3-b980-26ff13faf64e',
+      realmId: req.query.realmId,
+      userXRefID: 'test user'
+    })
+    res.send(200)
+    return
+  }
   const customerAuthDetails =
     await $CustomerAuthDetailsService.getCustomerAuthDetailsByApplicationID({
       applicationID: req.query.realmId,
@@ -58,7 +74,7 @@ export const quickBookAuthResponseHandler = async (
     clientId: customerAuthDetails.clientID,
     clientSecret: customerAuthDetails.clientSecret,
     environment: 'sandbox',
-    redirectUri: QUICKBOOKS_CALLBACK_API,
+    redirectUri: QUICKBOOKS_CALLBACK_API_PROD,
   })
 
   oauthClient
@@ -81,6 +97,11 @@ export const quickBookAuthResponseHandler = async (
         'EX',
         authResponse.token.expires_in
       )
+      await $IntegrationService.syncIntegrationData({
+        customerXRefID: 'f590257b-a925-45d3-b980-26ff13faf64e',
+        realmId: req.query.realmId,
+        userXRefID: 'test user'
+      })
       res.send(200)
     })
     .catch(function (e) {

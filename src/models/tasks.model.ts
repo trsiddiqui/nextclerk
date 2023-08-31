@@ -24,7 +24,7 @@ export default class TasksManager {
     .join('labels', 'labels.id', 'tasks.labelID')
     .join('entities', 'entities.id', 'tasks.entityID')
     .join('categories', 'categories.id', 'tasks.categoryID')
-    .leftJoin('supporting_packages', 'supporting_packages.id', 'tasks.supportingPackageID')
+    .leftJoin('supporting_packages', 'supporting_packages.taskID', 'tasks.id')
     .select<TaskDBResponse>(
       'tasks.*',
       'labels.label as label',
@@ -33,6 +33,7 @@ export default class TasksManager {
       'categories.uuid as categoryUUID',
       'entities.name as entityName',
       'entities.uuid as entityUUID',
+      'supporting_packages.uuid as supportingPackageUUID',
       'supporting_packages.status as status',
     )
     .where('tasks.uuid', uuid)
@@ -58,7 +59,7 @@ export default class TasksManager {
     .join('labels', 'labels.id', 'tasks.labelID')
     .join('entities', 'entities.id', 'tasks.entityID')
     .join('categories', 'categories.id', 'tasks.categoryID')
-    .leftJoin('supporting_packages', 'supporting_packages.id', 'tasks.supportingPackageID')
+    .leftJoin('supporting_packages', 'supporting_packages.taskID', 'tasks.id')
     .select<TaskDBResponse[]>(
       'tasks.*',
       'labels.label as label',
@@ -67,6 +68,7 @@ export default class TasksManager {
       'categories.uuid as categoryUUID',
       'entities.name as entityName',
       'entities.uuid as entityUUID',
+      'supporting_packages.uuid as supportingPackageUUID',
       'supporting_packages.status as status',
     )
     .where('tasks.parentUuid', uuid)
@@ -224,7 +226,7 @@ export default class TasksManager {
       .join('labels', 'labels.id', 'tasks.labelID')
       .join('entities', 'entities.id', 'tasks.entityID')
       .join('categories', 'categories.id', 'tasks.categoryID')
-      .leftJoin('supporting_packages', 'supporting_packages.id', 'tasks.supportingPackageID')
+      .leftJoin('supporting_packages', 'supporting_packages.taskID', 'tasks.id')
       .select<TaskDBResponse[]>(
         'tasks.*',
         'labels.label as label',
@@ -233,6 +235,7 @@ export default class TasksManager {
         'categories.uuid as categoryUUID',
         'entities.name as entityName',
         'entities.uuid as entityUUID',
+        'supporting_packages.uuid as supportingPackageUUID',
         'supporting_packages.status as status',
       )
       .where('tasks.entityID',entityID)

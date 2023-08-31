@@ -170,20 +170,21 @@ export default class TaskService {
     const assignerEntity = assigner.entries().next().value
     const assignerName = `${assignerEntity[1].firstName} ${assignerEntity[1].lastName}`
 
-    let supportingPackageEntity
-    if ( task.supportingPackageID) {
-      const supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
-        identifiers: {
-          ids: [task.supportingPackageID.toString()]
-        }
-      })
-      supportingPackageEntity = supportingPackage.entries().next().value
-    }
+    // let supportingPackageEntity
+    // if ( task.supportingPackageID) {
+    //   const supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
+    //     identifiers: {
+    //       ids: [task.supportingPackageID.toString()]
+    //     }
+    //   })
+    //   supportingPackageEntity = supportingPackage.entries().next().value
+    // }
 
     const taskResult: TaskResponse = {
+      id: task.id,
       entityName: entity.get(entityUuid).name,
       entityUUID: entity.get(entityUuid).uuid,
-      supportingPackageUUID: supportingPackageEntity ? supportingPackageEntity[0] : null,
+      supportingPackageUUID: task.supportingPackageUUID,
       categoryName: task.categoryName,
       categoryUUID: task.categoryUUID,
       label: task.label,
@@ -463,12 +464,12 @@ export default class TaskService {
       })
     }
 
-    let supportingPackage : Map<string, SupportingPackage>
-    if (supportingPackageUUID) {
-      supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
-        identifiers: { uuids: [supportingPackageUUID]}
-      })
-    }
+    // let supportingPackage : Map<string, SupportingPackage>
+    // if (supportingPackageUUID) {
+    //   supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
+    //     identifiers: { uuids: [supportingPackageUUID]}
+    //   })
+    // }
     const uuid = v4()
 
     const createdTask = await this.#tasksManager.createTask({
@@ -487,7 +488,7 @@ export default class TaskService {
         entityID: entity.get(entityUuid).id,
         assigneeID: assigneeUUID ? parseInt(assignee.get(assigneeUUID).id) : null,
         assignerID: parseInt(assigner.get(assignerUUID).id),
-        supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
+        // supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
       }
     })
 
@@ -515,7 +516,7 @@ export default class TaskService {
             entityID: entity.get(entityUuid).id,
             assigneeID: assigneeUUID?  parseInt(assignee.get(assigneeUUID).id): null,
             assignerID: parseInt(assigner.get(assignerUUID).id),
-            supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
+            // supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
         },
         userXRefID
       })
@@ -552,7 +553,7 @@ export default class TaskService {
       throw new Error("No Task with given UUID exist")
     }
 
-    await this.#tasksManager.archiveTask({
+    await this.#tasksManager.archiveTaskByIdentifier({
       entityID: entity.get(entityUuid).id.toString(),
       identifier: {
         taskUUID: existingTask.uuid
