@@ -15,6 +15,7 @@ import errorMiddleware from '../src/routes/middlewares/error'
 import { logger, stream } from '../src/utils/logger'
 import { openApiValidatorMiddlewares } from './routes/middlewares/validation'
 import supportingPackageRoutes from './routes/supportingPackage'
+import authRoutes from './routes/auth'
 import fileRoutes from './routes/file'
 import thirdPartyAuthRoutes from './routes/thirdPartyAuth'
 import genericRoutes from './routes/shared'
@@ -79,6 +80,7 @@ class App {
     })
     this.app.use('/api', supportingPackageRoutes)
     this.app.use('/api', genericRoutes)
+    this.app.use('/auth', authRoutes)
     this.app.use('/api/global', fileRoutes)
     this.app.use('/third-party-auth', thirdPartyAuthRoutes)
     this.app.use(function errorHandler(err, req, res, next) {
