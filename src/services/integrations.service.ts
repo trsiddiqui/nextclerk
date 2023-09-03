@@ -7,6 +7,7 @@ import { redis } from '@/server'
 import { AccountRequest, CustomerRequest, QuickBookAccount, QuickBookCustomer } from '@/types'
 import AccountService from './accounts.service'
 import CustomerService from './customers.service'
+import CustomerAuthDetailsService from './customerAuthDetails.service'
 
 export default class IntegrationService {
   #entityService: EntityService
@@ -15,18 +16,23 @@ export default class IntegrationService {
 
   #customerService: CustomerService
 
+  #customerAuthDetailsService: CustomerAuthDetailsService
+
   constructor({
     entityService,
     accountService,
-    customerService
+    customerService,
+    customerAuthDetailsService
   }: {
     entityService: EntityService
     accountService: AccountService
     customerService: CustomerService
+    customerAuthDetailsService: CustomerAuthDetailsService
   }) {
     this.#entityService = entityService
     this.#accountService = accountService
     this.#customerService = customerService
+    this.#customerAuthDetailsService = customerAuthDetailsService
   }
 
   private parseQBAccountData({
@@ -85,6 +91,78 @@ export default class IntegrationService {
       parsedCustomers.push(parsedCustomer)
     }
     return parsedCustomers
+  }
+
+  public async getQBToken({ customerXRefID }: { customerXRefID: string }): Promise<{
+    realmId: string,
+    token: string
+  }> {
+    let realmId,token
+    const entityAuth =  await this.#customerAuthDetailsService.getCustomerAuthDetailsByEntityID({
+      entityUuid: customerXRefID
+    })
+    if (!entityAuth) {
+      throw Error('user does not have integration. please do integration for first time!')
+    }
+
+    realmId = entityAuth.applicationID
+    token = await redis.get(realmId)
+
+    if (token) {
+      return {
+        realmId,
+        token
+      }
+    }
+    const basicToken = Buffer.from(entityAuth.clientID + ":" + entityAuth.clientSecret).toString('base64')
+
+    const axiosConfig = {
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": `Basic ${basicToken}`,
+      }
+    }
+    const data = {
+      grant_type : 'refresh_token',
+      refresh_token: entityAuth.refreshToken
+    }
+
+    try {
+      const newTokenResponse = await axios.post(
+        'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
+        data,
+        axiosConfig
+      )
+
+      await this.#customerAuthDetailsService.upsertCustomerAuthDetails({
+        customerAuthDetails: {
+          ...entityAuth,
+          applicationID: realmId,
+          refreshToken: newTokenResponse.data.refresh_token,
+          refreshTokenExpiry: new Date(
+            Date.now() + newTokenResponse.data.x_refresh_token_expires_in * 1000
+          ),
+        },
+      })
+      await redis.set(
+        realmId,
+        newTokenResponse.data.access_token,
+        'EX',
+        newTokenResponse.data.expires_in
+      )
+
+    } catch (err) {
+      console.error(
+        err.response.status,
+        err.response.data.error.message
+      )
+    }
+
+    return {
+      realmId,
+      token: entityAuth.refreshToken
+    }
   }
 
   public async thirdPartyAuth({ customerXRefID }: { customerXRefID: string }): Promise<any> {
@@ -338,3 +416,4 @@ export default class IntegrationService {
       })
   }
 }
+

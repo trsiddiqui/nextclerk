@@ -8,6 +8,7 @@ import {
   getSupportingPackage,
   createSupportingPackageCommunication,
   getSupportingPackageCommunicationByCommunicationUUID,
+  postJournalEntryToERP,
 } from '../routes/handlers/supportingPackages'
 
 const router = Router()
@@ -31,7 +32,7 @@ router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communi
 router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications/:communicationUUID`, getSupportingPackageCommunicationByCommunicationUUID)
 
 // JE
-// router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, createJournalEntries)
+router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry/post-to-erp`, postJournalEntryToERP)
 // router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, updateJournalEntries)
 // router.delete(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, deleteJournalEntries)
 // router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, getJournalEntries)

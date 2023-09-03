@@ -77,7 +77,8 @@ export const $DepartmentService = new DepartmentService({
 export const $IntegrationService = new IntegrationService({
   entityService: $EntityService,
   accountService: $AccountService,
-  customerService: $CustomerService
+  customerService: $CustomerService,
+  customerAuthDetailsService: $CustomerAuthDetailsService
 })
 
 export const $UserService = new UserService({
@@ -123,10 +124,12 @@ export const $SupportingPackageService = new SupportingPackageService({
   entityService: $EntityService,
   userService: $UserService,
   fileService: $FileService,
+  accountService: $AccountService,
   supportingPackageAttachmentService: $SupportingPackageAttachmentService,
   supportingPackagesUsersService: $SupportingPackageUserService,
   supportingPackageCommunicationService: $SupportingPackageCommunicationService,
   supportingPackageJournalEntriesService: $SupportingPackageJournalEntriesService,
+  integrationService: $IntegrationService
 })
 
 export const $TaskService =new TaskService({

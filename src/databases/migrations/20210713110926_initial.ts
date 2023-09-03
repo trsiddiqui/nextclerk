@@ -103,6 +103,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('number').nullable()
     table.boolean('isConfidential').defaultTo(false).notNullable()
     table.string('journalNumber').nullable()
+    table.string('journalID').nullable()
+    table.string('journalStatus').nullable()
     table.timestamp('date').notNullable().defaultTo(knex.fn.now())
     table.boolean('isDraft').notNullable().defaultTo(true)
     table.string('status').nullable()

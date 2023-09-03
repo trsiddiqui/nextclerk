@@ -234,28 +234,27 @@ export const getCategories = async (
   }
 }
 
-// export const createJournalEntries = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { customerXRefID, supportingPackageUUID } = req.params
-//     const { journalEntryLines } = req.body
+export const postJournalEntryToERP = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { customerXRefID, supportingPackageUUID } = req.params
 
-//     const journalEntryLinesResponse =
-//       await $SupportingPackageService.createSupportingPackageJournalEntries({
-//         journalEntryLines,
-//         customerXRefID,
-//         supportingPackageUUID,
-//         userXRefID: 'testUser',
-//       })
+    const ERPjournalEntryResponse =
+      await $SupportingPackageService.postToERP({
+        journalEntryLines: req.body,
+        customerXRefID,
+        supportingPackageUUID,
+        userXRefID: 'testUser',
+      })
 
-//     res.status(201).json(journalEntryLinesResponse)
-//   } catch (error) {
-//     next(error)
-//   }
-// }
+    res.sendStatus(200)
+  } catch (error) {
+    next(error)
+  }
+}
 
 // export const updateJournalEntries = async (
 //   req: Request,
