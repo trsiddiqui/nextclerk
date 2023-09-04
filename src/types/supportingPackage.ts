@@ -32,17 +32,28 @@ export interface supportingPackageFile {
   highLights?: object
 }
 
+export type JournalStatusType =  'SYNCED' | 'NOT-SYNCED' | 'ERROR'
+
+export interface SupportingPackagePatchRequest {
+  journalID?: string
+  journalStatus: JournalStatusType
+}
+
 export interface SupportingPackage extends EntityDate {
   id: number
   uuid: string
   number: string
   title: string
   categoryID: number
+  entityID: number
   labelID: number
   isConfidential: boolean
   date: Date
   isDraft: boolean
   journalNumber: string
+  taskID?: string
+  journalID?: string
+  journalStatus?: string
 }
 
 export interface SupportingPackageResponse extends EntityDate {
@@ -59,6 +70,9 @@ export interface SupportingPackageResponse extends EntityDate {
   date: Date
   isDraft: boolean
   journalNumber: string
+  taskID?: string
+  journalID?: string
+  journalStatus?: string
   users: SupportingPackageUserResponse[]
   files: SupportingPackageAttachmentResponseWithUUID[]
   communications: SupportingPackageCommunicationResponse[]

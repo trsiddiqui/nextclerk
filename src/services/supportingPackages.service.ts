@@ -1,6 +1,7 @@
 import { v4 } from 'uuid'
 import {
   SupportingPackage,
+  SupportingPackagePatchRequest,
   SupportingPackageRequest,
   SupportingPackageResponse,
 } from '../types/supportingPackage'
@@ -12,7 +13,7 @@ import EntityService from './entities.service'
 import UserService from './user.service'
 import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
-import { DRIVE_ID } from '../config'
+import { ADDRESS, DRIVE_ID } from '../config'
 import {
   JournalEntryRequest,
   QBJournalEntryLine,
@@ -29,6 +30,7 @@ import SupportingPackageJournalEntriesService from './supportingPackagesJournalE
 import { redis } from '@/server'
 import AccountService from './accounts.service'
 import IntegrationService from './integrations.service'
+import { DateTime } from 'luxon'
 
 
 
@@ -606,6 +608,54 @@ export default class SupportingPackageService {
     })
   }
 
+  public async patchSupportingPackage({
+    supportingPackageUUID,
+    supportingPackagePatchRequest,
+    userXRefID,
+  }: {
+    supportingPackageUUID: string
+    supportingPackagePatchRequest: Partial<SupportingPackagePatchRequest>
+    userXRefID: string
+  }): Promise<SupportingPackageResponse> {
+    const {
+      journalID,
+      journalStatus,
+    } = supportingPackagePatchRequest
+
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID(
+      {
+        uuid: supportingPackageUUID,
+      }
+    )
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { ids: [coreSupportingPackage.entityID.toString()] },
+    })
+
+    if (
+      coreSupportingPackage.journalID !== journalID ||
+      coreSupportingPackage.journalStatus !== journalStatus
+    ) {
+
+      await this.#supportingPackagesManager.updateSupportingPackage({
+        entityID: coreSupportingPackage.entityID.toString(),
+        supportingPackage: {
+          ...coreSupportingPackage,
+          journalID: journalID ?? null,
+          journalStatus
+        },
+        userXRefID,
+        identifier: { supportingPackageUUID },
+      })
+    }
+
+    return this.getSupportingPackage({
+      customerXRefID: entity.get(coreSupportingPackage.entityID.toString()).uuid,
+      supportingPackageUUID,
+    })
+  }
+
   public async getSupportingPackage({
     customerXRefID,
     supportingPackageUUID,
@@ -784,7 +834,7 @@ export default class SupportingPackageService {
       journalEntryLines,
       supportingPackageTitle: coreSupportingPackage.title
     })
-    let postedJE
+    let postedJE, journalStatus, journalID
 
     try {
       postedJE = await axios.post(
@@ -793,15 +843,113 @@ export default class SupportingPackageService {
         axiosConfig
       )
 
+      const updateJERequest = {
+        SyncToken: '0',
+        DocNumber: coreSupportingPackage.journalNumber,
+        domain: 'QBO',
+        TxnDate: coreSupportingPackage.date,
+        Line: data.Line,
+        PrivateNote: `${ADDRESS}supporting-package/${supportingPackageUUID}/edit/`,
+        MetaData: {
+          CreateTime: DateTime.now().toISO(),
+          LastUpdatedTime: DateTime.now().toISO()
+        },
+        sparse: false,
+        Adjustment: false,
+        Id: postedJE.data.JournalEntry.Id
+      }
+
+      journalID = postedJE.data.JournalEntry.Id
+      journalStatus = 'SYNCED'
+
+
+
+      // const updateRequest2 = {
+      //   SyncToken: "1",
+      //   domain: "QBO",
+      //   TxnDate: "2015-06-29",
+      //   sparse: false,
+      //   Line: [
+      //     {
+      //       JournalEntryLineDetail: {
+      //         PostingType:"Debit",
+      //         AccountRef:{
+      //           name:"Bank Charges",
+      //           value:"8"
+      //         }
+      //       },
+      //       Amount:100,
+      //       id: '0',
+      //       Description:"100 e=memo",
+      //       DetailType:"JournalEntryLineDetail"
+      //     },
+      //     {
+      //       JournalEntryLineDetail:{
+      //         PostingType:"Credit",
+      //         AccountRef:{
+      //           name:"Billable Expense Income",
+      //           value:"85"
+      //         }
+      //       },
+      //       Amount:100,
+      //       id: '1',
+      //       Description:"100 2meter",
+      //       DetailType:"JournalEntryLineDetail"
+      //     }
+      //   ],
+      //   Adjustment: false,
+      //   Id: postedJE.data.JournalEntry.Id,
+      //   TxnTaxDetail: {},
+      //   MetaData: {
+      //     CreateTime: "2015-06-29T12:33:57-07:00",
+      //     LastUpdatedTime: "2015-06-29T12:33:57-07:00"
+      //   }
+      // }
+      // console.log(updateJERequest)
+
+      // const spareUpdateObject = {
+      //   SyncToken: '0',
+      //   // DocNumber: coreSupportingPackage.journalNumber,
+      //   domain: 'QBO',
+      //   TxnDate: '2015-11-30',
+      //   PrivateNote: `${ADDRESS}supporting-package/${supportingPackageUUID}/edit/`,
+      //   sparse: true,
+      //   Adjustment: false,
+      //   Id: postedJE.data.JournalEntry.Id,
+      // }
+
+      const updatedJE = await axios.post(
+        `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry`,
+        updateJERequest,
+        axiosConfig
+      )
+
+
+
+
+
       console.log(postedJE.data.JournalEntry.Id)
 
+      // call update JE endpoint to post doc number and txn date with JE ID and
+      // update SP with JE ID and status
+
+
     } catch (err) {
+      journalStatus = 'ERROR'
       console.error(
         err.response.status,
-        err.response.data.error.code,
+        err.response.data.error,
         err.response.data.error.message
       )
     }
+    await this.patchSupportingPackage({
+      supportingPackageUUID,
+      supportingPackagePatchRequest: {
+        journalID,
+        journalStatus
+      },
+      userXRefID
+    })
 
 
     return postedJE
