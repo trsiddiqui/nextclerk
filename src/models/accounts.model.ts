@@ -36,6 +36,23 @@ export default class AccountsManager extends RelationsManager {
     return  accounts
   }
 
+  public async getAccountsByLabel({
+    txn,
+    label,
+  }: {
+    txn?: Knex.Transaction
+    label: string
+  }): Promise<Account> {
+    let query = this.#knex.withSchema('public').table('accounts').select<Account>('*').where({label}).first()
+
+    if (txn) {
+      query = query.transacting(txn)
+    }
+    const account = await query
+
+    return  account
+  }
+
   public async getAllAccounts({
     entityID,
     txn,

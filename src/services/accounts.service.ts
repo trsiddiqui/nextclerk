@@ -48,6 +48,17 @@ export default class AccountService {
     return accounts
   }
 
+  public async getAccountByName({ label }: { label:string }): Promise<Account> {
+
+
+    const account = await this.#accountsManager.getAccountsByLabel({
+      label,
+      txn: null,
+    })
+
+    return account
+  }
+
   public async upsertAccounts({ accounts, userXRefID, customerXRefID }: { accounts: AccountRequest[], userXRefID: string, customerXRefID: string }): Promise<Account[]> {
     for (const account of accounts) {
       await this.#accountsManager.upsertAccounts({

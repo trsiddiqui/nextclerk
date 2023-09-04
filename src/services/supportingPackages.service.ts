@@ -1,6 +1,7 @@
 import { v4 } from 'uuid'
 import {
   SupportingPackage,
+  SupportingPackagePatchRequest,
   SupportingPackageRequest,
   SupportingPackageResponse,
 } from '../types/supportingPackage'
@@ -12,8 +13,11 @@ import EntityService from './entities.service'
 import UserService from './user.service'
 import { getAccessToken, isEmpty } from '../utils/util'
 import axios from 'axios'
-import { DRIVE_ID } from '../config'
+import { ADDRESS, DRIVE_ID } from '../config'
 import {
+  JournalEntryRequest,
+  QBJournalEntryLine,
+  QBJournalEntryLines,
   SupportingPackageCommunicationRequest,
   SupportingPackageCommunicationResponse,
 } from '@/types'
@@ -23,6 +27,10 @@ import FileService from './files.service'
 import SupportingPackageCommunicationService from './supportingPackagesCommunications.service'
 import { getMasterFileLinksFromSharepoint } from './sharepoint.service'
 import SupportingPackageJournalEntriesService from './supportingPackagesJournalEntries.service'
+import { redis } from '@/server'
+import AccountService from './accounts.service'
+import IntegrationService from './integrations.service'
+import { DateTime } from 'luxon'
 
 
 
@@ -39,6 +47,8 @@ export default class SupportingPackageService {
 
   #fileService: FileService
 
+  #accountService: AccountService
+
   #supportingPackagesUsersService: SupportingPackageUserService
 
   #supportingPackageAttachmentService: SupportingPackageAttachmentService
@@ -47,6 +57,8 @@ export default class SupportingPackageService {
 
   #supportingPackageJournalEntriesService: SupportingPackageJournalEntriesService
 
+  #integrationService: IntegrationService
+
   constructor({
     supportingPackagesManager,
     categoryService,
@@ -54,10 +66,12 @@ export default class SupportingPackageService {
     entityService,
     userService,
     fileService,
+    accountService,
     supportingPackagesUsersService,
     supportingPackageAttachmentService,
     supportingPackageCommunicationService,
     supportingPackageJournalEntriesService,
+    integrationService
   }: {
     supportingPackagesManager: SupportingPackagesManager
     categoryService: CategoryService
@@ -65,10 +79,12 @@ export default class SupportingPackageService {
     entityService: EntityService
     userService: UserService
     fileService: FileService
+    accountService: AccountService
     supportingPackagesUsersService: SupportingPackageUserService
     supportingPackageAttachmentService: SupportingPackageAttachmentService
     supportingPackageCommunicationService: SupportingPackageCommunicationService
     supportingPackageJournalEntriesService: SupportingPackageJournalEntriesService
+    integrationService: IntegrationService
   }) {
     this.#supportingPackagesManager = supportingPackagesManager
     this.#categoryService = categoryService
@@ -76,10 +92,12 @@ export default class SupportingPackageService {
     this.#entityService = entityService
     this.#userService = userService
     this.#fileService = fileService
+    this.#accountService = accountService
     this.#supportingPackagesUsersService = supportingPackagesUsersService
     this.#supportingPackageAttachmentService = supportingPackageAttachmentService
     this.#supportingPackageCommunicationService = supportingPackageCommunicationService
     this.#supportingPackageJournalEntriesService = supportingPackageJournalEntriesService
+    this.#integrationService = integrationService
   }
 
   public async validateAndGetSupportingPackages({
@@ -590,6 +608,54 @@ export default class SupportingPackageService {
     })
   }
 
+  public async patchSupportingPackage({
+    supportingPackageUUID,
+    supportingPackagePatchRequest,
+    userXRefID,
+  }: {
+    supportingPackageUUID: string
+    supportingPackagePatchRequest: Partial<SupportingPackagePatchRequest>
+    userXRefID: string
+  }): Promise<SupportingPackageResponse> {
+    const {
+      journalID,
+      journalStatus,
+    } = supportingPackagePatchRequest
+
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID(
+      {
+        uuid: supportingPackageUUID,
+      }
+    )
+    const entity = await this.#entityService.validateAndGetEntities({
+      identifiers: { ids: [coreSupportingPackage.entityID.toString()] },
+    })
+
+    if (
+      coreSupportingPackage.journalID !== journalID ||
+      coreSupportingPackage.journalStatus !== journalStatus
+    ) {
+
+      await this.#supportingPackagesManager.updateSupportingPackage({
+        entityID: coreSupportingPackage.entityID.toString(),
+        supportingPackage: {
+          ...coreSupportingPackage,
+          journalID: journalID ?? null,
+          journalStatus
+        },
+        userXRefID,
+        identifier: { supportingPackageUUID },
+      })
+    }
+
+    return this.getSupportingPackage({
+      customerXRefID: entity.get(coreSupportingPackage.entityID.toString()).uuid,
+      supportingPackageUUID,
+    })
+  }
+
   public async getSupportingPackage({
     customerXRefID,
     supportingPackageUUID,
@@ -699,6 +765,194 @@ export default class SupportingPackageService {
       communications,
       journalEntries,
     }
+  }
+
+  private async parseJEtoQBJEData({
+    journalEntryLines,
+    supportingPackageTitle
+  }: {
+    journalEntryLines: JournalEntryRequest[]
+    supportingPackageTitle: string
+
+  }) : Promise<QBJournalEntryLines> {
+    const parsedJournals: QBJournalEntryLine [] = []
+    for(const je of journalEntryLines) {
+      const account = await this.#accountService.validateAndGetAccounts({
+        identifiers: {
+          uuids: [je.accountUUID]
+        }
+      })
+      const parsedJE : QBJournalEntryLine = {
+        JournalEntryLineDetail: {
+          PostingType: je.debitAmount ? 'Debit' : 'Credit',
+          AccountRef: {
+            name: account.get(je.accountUUID).label,
+            value: account.get(je.accountUUID).internalID.toString()
+          }
+        },
+        Amount: je.debitAmount ?? je.creditAmount,
+        Description: je.memo,
+        DetailType: "JournalEntryLineDetail"
+      }
+      parsedJournals.push(parsedJE)
+    }
+    const result = {
+      Line:parsedJournals
+    }
+    return result
+  }
+
+  public async postToERP({
+    journalEntryLines,
+    customerXRefID,
+    supportingPackageUUID,
+    userXRefID
+  }:{
+    journalEntryLines: JournalEntryRequest[]
+    customerXRefID: string
+    supportingPackageUUID: string
+    userXRefID: string
+  }): Promise<unknown> {
+
+    if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+
+    const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID(
+      {
+        uuid: supportingPackageUUID,
+      }
+    )
+    const { token, realmId } = await this.#integrationService.getQBToken({ customerXRefID })
+
+    const axiosConfig = {
+      headers: {
+        "content-type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      }
+    }
+
+    const data = await this.parseJEtoQBJEData({
+      journalEntryLines,
+      supportingPackageTitle: coreSupportingPackage.title
+    })
+    let postedJE, journalStatus, journalID
+
+    try {
+      postedJE = await axios.post(
+        `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry?minorversion=65`,
+        data,
+        axiosConfig
+      )
+
+      const updateJERequest = {
+        SyncToken: '0',
+        DocNumber: coreSupportingPackage.journalNumber,
+        domain: 'QBO',
+        TxnDate: coreSupportingPackage.date,
+        Line: data.Line,
+        PrivateNote: `${ADDRESS}supporting-package/${supportingPackageUUID}/edit/`,
+        MetaData: {
+          CreateTime: DateTime.now().toISO(),
+          LastUpdatedTime: DateTime.now().toISO()
+        },
+        sparse: false,
+        Adjustment: false,
+        Id: postedJE.data.JournalEntry.Id
+      }
+
+      journalID = postedJE.data.JournalEntry.Id
+      journalStatus = 'SYNCED'
+
+
+
+      // const updateRequest2 = {
+      //   SyncToken: "1",
+      //   domain: "QBO",
+      //   TxnDate: "2015-06-29",
+      //   sparse: false,
+      //   Line: [
+      //     {
+      //       JournalEntryLineDetail: {
+      //         PostingType:"Debit",
+      //         AccountRef:{
+      //           name:"Bank Charges",
+      //           value:"8"
+      //         }
+      //       },
+      //       Amount:100,
+      //       id: '0',
+      //       Description:"100 e=memo",
+      //       DetailType:"JournalEntryLineDetail"
+      //     },
+      //     {
+      //       JournalEntryLineDetail:{
+      //         PostingType:"Credit",
+      //         AccountRef:{
+      //           name:"Billable Expense Income",
+      //           value:"85"
+      //         }
+      //       },
+      //       Amount:100,
+      //       id: '1',
+      //       Description:"100 2meter",
+      //       DetailType:"JournalEntryLineDetail"
+      //     }
+      //   ],
+      //   Adjustment: false,
+      //   Id: postedJE.data.JournalEntry.Id,
+      //   TxnTaxDetail: {},
+      //   MetaData: {
+      //     CreateTime: "2015-06-29T12:33:57-07:00",
+      //     LastUpdatedTime: "2015-06-29T12:33:57-07:00"
+      //   }
+      // }
+      // console.log(updateJERequest)
+
+      // const spareUpdateObject = {
+      //   SyncToken: '0',
+      //   // DocNumber: coreSupportingPackage.journalNumber,
+      //   domain: 'QBO',
+      //   TxnDate: '2015-11-30',
+      //   PrivateNote: `${ADDRESS}supporting-package/${supportingPackageUUID}/edit/`,
+      //   sparse: true,
+      //   Adjustment: false,
+      //   Id: postedJE.data.JournalEntry.Id,
+      // }
+
+      const updatedJE = await axios.post(
+        `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry`,
+        updateJERequest,
+        axiosConfig
+      )
+
+
+
+
+
+      console.log(postedJE.data.JournalEntry.Id)
+
+      // call update JE endpoint to post doc number and txn date with JE ID and
+      // update SP with JE ID and status
+
+
+    } catch (err) {
+      journalStatus = 'ERROR'
+      console.error(
+        err.response.status,
+        err.response.data.error,
+        err.response.data.error.message
+      )
+    }
+    await this.patchSupportingPackage({
+      supportingPackageUUID,
+      supportingPackagePatchRequest: {
+        journalID,
+        journalStatus
+      },
+      userXRefID
+    })
+
+
+    return postedJE
   }
 
   // public async getJournalEntryBySupportingPackageId({

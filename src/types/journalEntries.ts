@@ -39,3 +39,22 @@ export interface JournalEntryRequest {
 
 export type JournalEntryResponse = Omit<JournalEntryWithDate, 'id'>
 
+
+export interface QBJournalEntryLine {
+  JournalEntryLineDetail: {
+    PostingType: string,
+    AccountRef: {
+      name: string,
+      value: string
+    }
+  },
+  DetailType: string,
+  Amount: number,
+  Id?: string,
+  Description: string
+}
+
+export interface QBJournalEntryLines  {
+  Line: QBJournalEntryLine[]
+}
+

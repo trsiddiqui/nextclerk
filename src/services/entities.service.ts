@@ -31,7 +31,11 @@ export default class EntityService {
     if (returnedEntities.length !== inputLength) {
       throw new Error('One or more of the reference Entities could not be found')
     }
-    return new Map(returnedEntities.map((obj) => [obj.uuid, obj]))
+    if ('uuids' in identifiers) {
+      return new Map(returnedEntities.map((obj) => [obj.uuid, obj]))
+    } else  {
+      return new Map(returnedEntities.map((obj) => [obj.id.toString(), obj]))
+    }
   }
 
   public async upsertEntity({
