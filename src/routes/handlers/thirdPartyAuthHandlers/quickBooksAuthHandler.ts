@@ -33,7 +33,7 @@ export const quickBookAuthRequestHandler = async (
       clientId: customerAuthDetails.clientID,
       clientSecret: customerAuthDetails.clientSecret,
       environment: 'sandbox',
-      redirectUri: QUICKBOOKS_CALLBACK_API
+      redirectUri: QUICKBOOKS_CALLBACK_API_PROD,
     })
 
     const authUri = oauthClient.authorizeUri({
@@ -74,7 +74,7 @@ export const quickBookAuthResponseHandler = async (
     clientId: customerAuthDetails.clientID,
     clientSecret: customerAuthDetails.clientSecret,
     environment: 'sandbox',
-    redirectUri: QUICKBOOKS_CALLBACK_API,
+    redirectUri: QUICKBOOKS_CALLBACK_API_PROD,
   })
 
   oauthClient
