@@ -238,6 +238,7 @@ export default class TasksManager {
         'supporting_packages.uuid as supportingPackageUUID',
         'supporting_packages.status as status',
       )
+      .distinctOn('tasks.uuid')
       .where('tasks.entityID',entityID)
 
     if (txn) {

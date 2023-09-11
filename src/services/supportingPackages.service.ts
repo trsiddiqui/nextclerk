@@ -806,21 +806,23 @@ export default class SupportingPackageService {
     journalEntryLines,
     customerXRefID,
     supportingPackageUUID,
-    userXRefID
+    userXRefID,
   }:{
     journalEntryLines: JournalEntryRequest[]
     customerXRefID: string
     supportingPackageUUID: string
     userXRefID: string
-  }): Promise<unknown> {
+  }): Promise<boolean> {
 
     if (isEmpty(userXRefID)) throw new HttpException(400, 'user is empty')
+    let result, postedJE, journalStatus, journalID
 
     const coreSupportingPackage = await this.#supportingPackagesManager.getSupportingPackagesByUUID(
       {
         uuid: supportingPackageUUID,
       }
     )
+    journalID  = coreSupportingPackage.journalID
     const { token, realmId } = await this.#integrationService.getQBToken({ customerXRefID })
 
     const axiosConfig = {
@@ -834,17 +836,26 @@ export default class SupportingPackageService {
       journalEntryLines,
       supportingPackageTitle: coreSupportingPackage.title
     })
-    let postedJE, journalStatus, journalID
+
 
     try {
-      postedJE = await axios.post(
-        `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry?minorversion=65`,
-        data,
+      if (!journalID) {
+        postedJE = await axios.post(
+          `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry?minorversion=65`,
+          data,
+          axiosConfig
+        )
+        journalID = postedJE.data.JournalEntry.Id
+
+      }
+
+      const getJE = await axios.get(
+        `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry/${journalID}?minorversion=40`,
         axiosConfig
       )
 
       const updateJERequest = {
-        SyncToken: '0',
+        SyncToken: getJE.data.JournalEntry.SyncToken,
         DocNumber: coreSupportingPackage.journalNumber,
         domain: 'QBO',
         TxnDate: coreSupportingPackage.date,
@@ -856,67 +867,8 @@ export default class SupportingPackageService {
         },
         sparse: false,
         Adjustment: false,
-        Id: postedJE.data.JournalEntry.Id
+        Id: journalID
       }
-
-      journalID = postedJE.data.JournalEntry.Id
-      journalStatus = 'SYNCED'
-
-
-
-      // const updateRequest2 = {
-      //   SyncToken: "1",
-      //   domain: "QBO",
-      //   TxnDate: "2015-06-29",
-      //   sparse: false,
-      //   Line: [
-      //     {
-      //       JournalEntryLineDetail: {
-      //         PostingType:"Debit",
-      //         AccountRef:{
-      //           name:"Bank Charges",
-      //           value:"8"
-      //         }
-      //       },
-      //       Amount:100,
-      //       id: '0',
-      //       Description:"100 e=memo",
-      //       DetailType:"JournalEntryLineDetail"
-      //     },
-      //     {
-      //       JournalEntryLineDetail:{
-      //         PostingType:"Credit",
-      //         AccountRef:{
-      //           name:"Billable Expense Income",
-      //           value:"85"
-      //         }
-      //       },
-      //       Amount:100,
-      //       id: '1',
-      //       Description:"100 2meter",
-      //       DetailType:"JournalEntryLineDetail"
-      //     }
-      //   ],
-      //   Adjustment: false,
-      //   Id: postedJE.data.JournalEntry.Id,
-      //   TxnTaxDetail: {},
-      //   MetaData: {
-      //     CreateTime: "2015-06-29T12:33:57-07:00",
-      //     LastUpdatedTime: "2015-06-29T12:33:57-07:00"
-      //   }
-      // }
-      // console.log(updateJERequest)
-
-      // const spareUpdateObject = {
-      //   SyncToken: '0',
-      //   // DocNumber: coreSupportingPackage.journalNumber,
-      //   domain: 'QBO',
-      //   TxnDate: '2015-11-30',
-      //   PrivateNote: `${ADDRESS}supporting-package/${supportingPackageUUID}/edit/`,
-      //   sparse: true,
-      //   Adjustment: false,
-      //   Id: postedJE.data.JournalEntry.Id,
-      // }
 
       const updatedJE = await axios.post(
         `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/journalentry`,
@@ -924,22 +876,19 @@ export default class SupportingPackageService {
         axiosConfig
       )
 
+      journalStatus = 'SYNCED'
 
-
-
-
-      console.log(postedJE.data.JournalEntry.Id)
+      console.log(journalID)
 
       // call update JE endpoint to post doc number and txn date with JE ID and
       // update SP with JE ID and status
 
-
+      result = true
     } catch (err) {
       journalStatus = 'ERROR'
+      result = false
       console.error(
-        err.response.status,
-        err.response.data.error,
-        err.response.data.error.message
+        err.response
       )
     }
     await this.patchSupportingPackage({
@@ -952,7 +901,7 @@ export default class SupportingPackageService {
     })
 
 
-    return postedJE
+    return result
   }
 
   // public async getJournalEntryBySupportingPackageId({
