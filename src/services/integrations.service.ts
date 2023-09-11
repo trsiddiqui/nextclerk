@@ -154,8 +154,7 @@ export default class IntegrationService {
 
     } catch (err) {
       console.error(
-        err.response.status,
-        err.response.data.error.message
+        err
       )
     }
 

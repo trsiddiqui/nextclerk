@@ -242,15 +242,20 @@ export const postJournalEntryToERP = async (
   try {
     const { customerXRefID, supportingPackageUUID } = req.params
 
-    const ERPjournalEntryResponse =
+    const ERPjournalEntrySuccess =
       await $SupportingPackageService.postToERP({
         journalEntryLines: req.body,
         customerXRefID,
         supportingPackageUUID,
         userXRefID: 'testUser',
       })
+    if (ERPjournalEntrySuccess) {
+      res.status(200).json(ERPjournalEntrySuccess)
+    } else {
 
-    res.sendStatus(200)
+      res.send(400).json(ERPjournalEntrySuccess)
+    }
+
   } catch (error) {
     next(error)
   }
