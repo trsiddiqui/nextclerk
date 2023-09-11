@@ -108,7 +108,7 @@ export class KeycloakClient {
           Authorization: `Bearer ${token}`,
         },
       })
-      groups = data.map((d) => d.name)
+      groups = data.filter((d) => d.name !== 'Super Admin').map((d) => d.name)
     } catch (err) {
       console.error('An error occurred while fetching groups')
     }
@@ -120,6 +120,7 @@ export class KeycloakClient {
     try {
       const { data: userGroups } = await axios.put(
         `${this.adminApiUrl}/users/${userId}/groups/${groupId}`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
