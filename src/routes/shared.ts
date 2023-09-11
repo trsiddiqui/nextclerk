@@ -7,13 +7,17 @@ import { getEntityLocations } from './handlers/locations'
 import { getCategories } from './handlers/supportingPackages'
 import { getEntityUsers } from './handlers/users'
 import { getEntityLabels } from './handlers/labels'
-import { createEntityTask, deleteTask, getEntityTaskByUuid, getEntityTasks, updateTask } from './handlers/tasks'
+import {
+  createEntityTask,
+  deleteTask,
+  getEntityTaskByUuid,
+  getEntityTasks,
+  updateTask,
+} from './handlers/tasks'
 
 const router = Router()
 
 router.get(`/:customerXRefID/categories`, getCategories)
-
-router.get(`/:customerXRefID/users`, getEntityUsers)
 
 router.get(`/:customerXRefID/departments`, getEntityDepartments)
 
@@ -37,5 +41,6 @@ router.put(`/:customerXRefID/tasks/:taskUuid`, updateTask)
 
 router.delete(`/:entityUuid/tasks/:taskUuid`, deleteTask)
 
+router.get(`/:customerXRefID/users`, getEntityUsers)
 
 export default router

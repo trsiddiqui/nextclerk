@@ -1,14 +1,19 @@
 import { Knex } from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('users', (table) => {
-    table.bigIncrements('id').unsigned().primary()
+  await knex.schema.createTable('integrations', (table) => {
+    table.bigIncrements('id').notNullable().primary()
     table.string('uuid').notNullable()
-    table.string('email', 45).notNullable()
-    table.string('firstName', 100).notNullable()
-    table.string('lastName', 100).notNullable()
-    table.string('password', 255).nullable()
+    table.string('label').notNullable()
+    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('archivedAt')
+    table.string('createdBy').notNullable()
+    table.string('updatedBy').notNullable()
+    table.string('archivedBy')
+    table.unique(['uuid'])
   })
+
   await knex.schema.createTable('entities', (table) => {
     table.bigIncrements('id').notNullable().primary()
     table.string('uuid').notNullable()
@@ -23,6 +28,37 @@ export async function up(knex: Knex): Promise<void> {
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
     table.string('archivedBy')
+    table.unique(['uuid'])
+  })
+
+  await knex.schema.createTable('departments', (table) => {
+    table.bigIncrements('id').notNullable().primary()
+    table.bigInteger('integrationID').notNullable().references('id').inTable('public.integrations')
+    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
+    table.string('uuid').notNullable()
+    table.string('internalID').notNullable()
+    table.string('label').notNullable()
+    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
+    table.timestamp('archivedAt')
+    table.string('createdBy').notNullable()
+    table.string('updatedBy').notNullable()
+    table.string('archivedBy')
+    table.unique(['entityID', 'integrationID', 'uuid'])
+  })
+
+  await knex.schema.createTable('users', (table) => {
+    table.bigIncrements('id').unsigned().primary()
+    table.string('uuid').notNullable()
+    table.string('email', 45).notNullable().unique()
+    table.string('firstName', 100).notNullable()
+    table.string('lastName', 100).notNullable()
+    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
+    table.bigInteger('managerID').nullable().references('id').inTable('public.users')
+    table.bigInteger('departmentID').references('id').inTable('public.departments').nullable()
+    table.boolean('isAccountingManager').defaultTo(false).notNullable()
+    table.timestamp('archivedAt').nullable()
+    table.bigInteger('achivedBy').nullable().references('id').inTable('public.users')
     table.unique(['uuid'])
   })
   await knex.schema.createTable('labels', (table) => {
@@ -115,11 +151,6 @@ export async function up(knex: Knex): Promise<void> {
     table.string('updatedBy').notNullable()
     table.string('archivedBy')
     table.unique(['uuid'])
-  })
-
-
-  await knex.schema.alterTable('users', (table) => {
-    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
   })
 
   await knex.schema.createTable('supporting_packages_attachments', (table) => {
@@ -220,35 +251,6 @@ export async function up(knex: Knex): Promise<void> {
     table.unique(['supportingPackageID', 'userID', 'type'])
   })
 
-  await knex.schema.createTable('integrations', (table) => {
-    table.bigIncrements('id').notNullable().primary()
-    table.string('uuid').notNullable()
-    table.string('label').notNullable()
-    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
-    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
-    table.timestamp('archivedAt')
-    table.string('createdBy').notNullable()
-    table.string('updatedBy').notNullable()
-    table.string('archivedBy')
-    table.unique(['uuid'])
-  })
-
-  await knex.schema.createTable('departments', (table) => {
-    table.bigIncrements('id').notNullable().primary()
-    table.bigInteger('integrationID').notNullable().references('id').inTable('public.integrations')
-    table.bigInteger('entityID').notNullable().references('id').inTable('public.entities')
-    table.string('uuid').notNullable()
-    table.string('internalID').notNullable()
-    table.string('label').notNullable()
-    table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
-    table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
-    table.timestamp('archivedAt')
-    table.string('createdBy').notNullable()
-    table.string('updatedBy').notNullable()
-    table.string('archivedBy')
-    table.unique(['entityID', 'integrationID', 'uuid'])
-  })
-
   await knex.schema.createTable('locations', (table) => {
     table.bigIncrements('id').notNullable().primary()
     table.bigInteger('integrationID').notNullable().references('id').inTable('public.integrations')
@@ -290,8 +292,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('internalID').notNullable()
     table.string('accountNumber').notNullable()
     table.string('label').notNullable()
-    table.float('initialBalance',2).defaultTo(0)
-    table.float('latestBalance',2).defaultTo(0)
+    table.float('initialBalance', 2).defaultTo(0)
+    table.float('latestBalance', 2).defaultTo(0)
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('archivedAt')

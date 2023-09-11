@@ -1,5 +1,5 @@
 import { CategoriesManager, UserManager } from '../models'
-import { SupportingPackageUserResponse, User, UserResponse } from '../types'
+import { DashboardUser, SupportingPackageUserResponse, User, UserResponse } from '../types'
 import EntityService from './entities.service'
 
 export default class UserService {
@@ -64,10 +64,31 @@ export default class UserService {
     })
 
     return entityUsers.map((eu) => ({
+      id: eu.id,
       firstName: eu.firstName,
       lastName: eu.lastName,
       uuid: eu.uuid,
       email: eu.email,
     }))
+  }
+
+  public async getEntitiesUsersForDashboard({
+    customerXRefID,
+  }: {
+    customerXRefID: string
+  }): Promise<DashboardUser[]> {
+    const dashboardUsers = await this.#userManager.getAllUsersForDashboard({
+      customerXRefID,
+    })
+
+    return dashboardUsers
+  }
+
+  public async updateUser({ user }: { user: Partial<User> }): Promise<void> {
+    await this.#userManager.updateUser(user)
+  }
+
+  public async deleteUser({ uuid }: { uuid: string }): Promise<void> {
+    await this.#userManager.deleteUser(uuid)
   }
 }
