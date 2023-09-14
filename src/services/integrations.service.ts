@@ -4,7 +4,7 @@ import axios from 'axios'
 import EntityService from './entities.service'
 import { TEMP_QUICKBOOKS_CLIENT_ID, TEMP_QUICKBOOKS_CLIENT_SECRET } from '../config'
 import { redis } from '@/server'
-import { AccountRequest, CustomerRequest, QuickBookAccount, QuickBookCustomer } from '@/types'
+import { AccountRequest, CustomerRequest, QuickBookAccount, QuickBookCustomer, QuickBookEmployee, QuickBookVendor } from '@/types'
 import AccountService from './accounts.service'
 import CustomerService from './customers.service'
 import CustomerAuthDetailsService from './customerAuthDetails.service'
@@ -84,7 +84,62 @@ export default class IntegrationService {
         integrationID : 1,
         entityID : entityID,
         internalID : parseInt(customer.Id),
+        type: 'CUSTOMER',
         label : customer.FullyQualifiedName,
+        createdBy :userXRefID,
+        updatedBy :userXRefID,
+      }
+      parsedCustomers.push(parsedCustomer)
+    }
+    return parsedCustomers
+  }
+
+  private parseQBVendorData({
+    entityID,
+    vendors,
+    userXRefID
+  }: {
+    entityID: string
+    vendors: QuickBookVendor[]
+    userXRefID: string
+
+  }) : CustomerRequest[] {
+    const parsedCustomers: CustomerRequest [] = []
+    for( const vendor of vendors) {
+      const parsedCustomer : CustomerRequest = {
+        uuid : v4(),
+        integrationID : 1,
+        entityID : entityID,
+        internalID : parseInt(vendor.Id),
+        label : vendor.DisplayName,
+        type : 'VENDOR',
+        createdBy :userXRefID,
+        updatedBy :userXRefID,
+      }
+      parsedCustomers.push(parsedCustomer)
+    }
+    return parsedCustomers
+  }
+
+  private parseQBEmployeeData({
+    entityID,
+    employees,
+    userXRefID
+  }: {
+    entityID: string
+    employees: QuickBookEmployee[]
+    userXRefID: string
+
+  }) : CustomerRequest[] {
+    const parsedCustomers: CustomerRequest [] = []
+    for( const employee of employees) {
+      const parsedCustomer : CustomerRequest = {
+        uuid : v4(),
+        integrationID : 1,
+        entityID : entityID,
+        internalID : parseInt(employee.Id),
+        label : employee.DisplayName,
+        type: 'EMPLOYEE',
         createdBy :userXRefID,
         updatedBy :userXRefID,
       }
@@ -283,13 +338,37 @@ export default class IntegrationService {
       axiosConfig
     )
 
+    const vendorData = await axios.get(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=select * from vendor&minorversion=65`,
+      axiosConfig
+    )
+
+    const employeeData = await axios.get(
+      `https://sandbox-quickbooks.api.intuit.com/v3/company/${realmId}/query?query=select * from employee&minorversion=65`,
+      axiosConfig
+    )
+
     const { Account } = accountData.data.QueryResponse
     const { Customer } = customerData.data.QueryResponse
+    const { Vendor } = vendorData.data.QueryResponse
+    const { Employee } = employeeData.data.QueryResponse
 
-    console.log(Customer)
+    console.log(Employee , Vendor)
 
     const accounts = this.parseQBAccountData({
       accounts: Account,
+      entityID: entity.get(customerXRefID).id.toString(),
+      userXRefID
+    })
+
+    const vendors = this.parseQBVendorData({
+      vendors: Vendor,
+      entityID: entity.get(customerXRefID).id.toString(),
+      userXRefID
+    })
+
+    const employees = this.parseQBEmployeeData({
+      employees: Employee,
       entityID: entity.get(customerXRefID).id.toString(),
       userXRefID
     })
@@ -300,6 +379,7 @@ export default class IntegrationService {
       userXRefID
     })
 
+
     await this.#accountService.upsertAccounts({
       accounts,
       customerXRefID,
@@ -308,6 +388,18 @@ export default class IntegrationService {
 
     await this.#customerService.upsertCustomers({
       customers,
+      customerXRefID,
+      userXRefID
+    })
+
+    await this.#customerService.upsertCustomers({
+      customers: employees,
+      customerXRefID,
+      userXRefID
+    })
+
+    await this.#customerService.upsertCustomers({
+      customers: vendors,
       customerXRefID,
       userXRefID
     })

@@ -7,6 +7,7 @@ export interface Customer extends EntityDateWithArchive {
   entityID: string
   uuid: string
   label: string
+  type: string | null
 }
 
 export interface CustomerRequest  {
@@ -15,6 +16,7 @@ export interface CustomerRequest  {
   entityID: string
   uuid: string
   label: string
+  type: string | null
   createdBy: string
   updatedBy: string
 }
@@ -65,4 +67,38 @@ export interface QuickBookCustomer {
   V4IDPseudonym: string,
   PrimaryPhone: { FreeFormNumber: string },
   PrimaryEmailAddr: { Address: string }
+}
+
+export interface QuickBookVendor {
+  Vendor1099: boolean,
+  domain: string,
+  DisplayName: string,
+  SyncToken: number,
+  PrintOnCheckName: string,
+  sparse: boolean,
+  Active: boolean,
+  Balance: number,
+  Id: string,
+  MetaData: {
+    CreateTime: string,
+    LastUpdatedTime: string
+  }
+}
+
+export interface QuickBookEmployee {
+  SyncToken: number,
+  domain: string,
+  DisplayName: string,
+  MiddleName: string,
+  FamilyName: string,
+  Active: boolean,
+  PrintOnCheckName: string,
+  sparse: boolean,
+  BillableTime: boolean,
+  GivenName: string,
+  Id: string,
+  MetaData: {
+    CreateTime: string,
+    LastUpdatedTime: string
+  }
 }
