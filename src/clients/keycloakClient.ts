@@ -1,6 +1,6 @@
 import { redis } from '@/server'
 import { $UserService } from '@/services'
-import { DashboardUser, User } from '@/types'
+import { DashboardUser, KeycloakUser, User } from '@/types'
 import axios from 'axios'
 
 export class KeycloakClient {
@@ -18,7 +18,7 @@ export class KeycloakClient {
         this.tokenUrl,
         new URLSearchParams({
           username: 'admin', //gave the values directly for testing
-          password: 'admin',
+          password: 'P@55word12345',
           client_id: 'admin-cli',
           grant_type: 'password',
         }),
@@ -33,6 +33,16 @@ export class KeycloakClient {
       })
     await redis.set('keycloak_token', response.data.access_token, 'EX', response.data.expires_in)
     return response.data.access_token
+  }
+
+  async getUsers(): Promise<KeycloakUser[]> {
+    const token = await this.#getToken()
+    const { data: users } = await axios.get(`${this.adminApiUrl}/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    return users
   }
 
   async getUsersGroups({
@@ -210,6 +220,57 @@ export class KeycloakClient {
       console.error('An error occurred while updating user', {
         user: userId,
       })
+    }
+  }
+
+  async createUser(
+    id: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    groups: string[]
+  ): Promise<unknown> {
+    const token = await this.#getToken()
+    try {
+      const resp = await axios.post(
+        `${this.adminApiUrl}/users`,
+        {
+          emailVerified: true,
+          enabled: true,
+          firstName,
+          lastName,
+          email,
+          groups,
+          id,
+          username: email,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return resp.data
+    } catch (err) {
+      console.error('An error occurred while creating user')
+    }
+  }
+
+  async createUserPassword(id: string, password: string): Promise<unknown> {
+    const token = await this.#getToken()
+    try {
+      const resp = await axios.put(
+        `${this.adminApiUrl}/users/${id}/reset-password`,
+        { type: 'password', temporary: false, value: password },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return resp.data
+    } catch (err) {
+      console.error('An error occurred while creating user')
     }
   }
 }

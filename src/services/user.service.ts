@@ -88,6 +88,10 @@ export default class UserService {
     await this.#userManager.updateUser(user)
   }
 
+  public async createUser({ user }: { user: Partial<User> }): Promise<void> {
+    await this.#userManager.createUser(user)
+  }
+
   public async deleteUser({ uuid }: { uuid: string }): Promise<void> {
     await this.#userManager.deleteUser(uuid)
   }

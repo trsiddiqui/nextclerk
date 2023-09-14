@@ -44,14 +44,13 @@ export const $CustomerAuthDetailsService = new CustomerAuthDetailsService({
   customerAuthDetailsManager: $CustomerAuthDetailsManager,
 })
 
-
 export const $EntityService = new EntityService({
   entitiesManager: $EntitiesManager,
 })
 
 export const $LabelService = new LabelService({
   labelsManager: $LabelsManager,
-  entityService: $EntityService
+  entityService: $EntityService,
 })
 
 export const $LocationService = new LocationService({
@@ -78,7 +77,7 @@ export const $IntegrationService = new IntegrationService({
   entityService: $EntityService,
   accountService: $AccountService,
   customerService: $CustomerService,
-  customerAuthDetailsService: $CustomerAuthDetailsService
+  customerAuthDetailsService: $CustomerAuthDetailsService,
 })
 
 export const $UserService = new UserService({
@@ -102,10 +101,11 @@ export const $SupportingPackageAttachmentService = new SupportingPackageAttachme
 
 export const $SupportingPackageCommunicationService = new SupportingPackageCommunicationService({
   supportingPackagesCommunicationsManager: $SupportingPackagesCommunicationsManager,
-  supportingPackagesCommunicationsAttachmentsManager: $SupportingPackagesCommunicationsAttachmentsManager,
+  supportingPackagesCommunicationsAttachmentsManager:
+    $SupportingPackagesCommunicationsAttachmentsManager,
   supportingPackagesCommunicationsUsersManager: $SupportingPackagesCommunicationsUsersManager,
   fileService: $FileService,
-  usersService: $UserService
+  usersService: $UserService,
 })
 
 export const $SupportingPackageJournalEntriesService = new SupportingPackageJournalEntriesService({
@@ -114,7 +114,7 @@ export const $SupportingPackageJournalEntriesService = new SupportingPackageJour
   customerService: $CustomerService,
   departmentService: $DepartmentService,
   entityService: $EntityService,
-  locationService: $LocationService
+  locationService: $LocationService,
 })
 
 export const $SupportingPackageService = new SupportingPackageService({
@@ -129,15 +129,14 @@ export const $SupportingPackageService = new SupportingPackageService({
   supportingPackagesUsersService: $SupportingPackageUserService,
   supportingPackageCommunicationService: $SupportingPackageCommunicationService,
   supportingPackageJournalEntriesService: $SupportingPackageJournalEntriesService,
-  integrationService: $IntegrationService
+  integrationService: $IntegrationService,
 })
 
-export const $TaskService =new TaskService({
+export const $TaskService = new TaskService({
   tasksManager: $TasksManager,
   entityService: $EntityService,
   userService: $UserService,
   categoryService: $CategoryService,
   labelService: $LabelService,
-  supportingPackageService: $SupportingPackageService
+  supportingPackageService: $SupportingPackageService,
 })
-
