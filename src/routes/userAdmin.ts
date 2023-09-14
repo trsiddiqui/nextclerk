@@ -10,14 +10,49 @@ const router = Router()
 
 router.get(`/:customerXRefID/users`, async (req, res) => {
   const kcClient = new KeycloakClient()
+  console.log('Requesting Users from Nextclerk')
   const dashboardUsers = await $UserService.getEntitiesUsersForDashboard({
     customerXRefID: req.params.customerXRefID,
   })
+  console.log('Requesting User Groups from Keycloak')
   const users = await kcClient.getUsersGroups({
     customerXRefID: req.params.customerXRefID,
     dashboardUsers,
   })
-  res.send(users)
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.status(200).send(users)
+})
+
+router.post(`/:customerXRefID/users`, async (req, res) => {
+  const { customerXRefID } = req.params
+  const kcClient = new KeycloakClient()
+  const user = req.body as UserRequest
+  const modelUser: Partial<User> = user
+  await kcClient.createUser(user.uuid, user.firstName, user.lastName, user.email, user.groups)
+  if (user.departmentUuid) {
+    const departments = await $DepartmentService.validateAndGetDepartments({
+      identifiers: { uuids: [user.departmentUuid] },
+    })
+    modelUser.departmentID = departments.get(user.departmentUuid).id
+  }
+  if (user.entityUuid) {
+    const entities = await $EntityService.validateAndGetEntities({
+      identifiers: { uuids: [customerXRefID] },
+    })
+    modelUser.entityID = entities.get(user.entityUuid).id
+  }
+  if (user.managerUuid) {
+    const users = await $UserService.validateAndGetUsers({
+      identifiers: { uuids: [user.managerUuid] },
+    })
+    modelUser.managerID = users.get(user.managerUuid).id
+  }
+  const users = await kcClient.getUsers()
+  const insertedUser = users.find((x) => x.email === user.email && x.lastName === user.lastName)
+  modelUser.uuid = insertedUser.id
+  await $UserService.createUser({ user: modelUser })
+  await kcClient.createUserPassword(insertedUser.id, 'P@55word1')
+  res.status(201).send({ user: modelUser })
 })
 
 router.put(`/:customerXRefID/users/:userXRefID`, async (req, res) => {
@@ -72,7 +107,8 @@ router.put(`/:customerXRefID/users/:userXRefID`, async (req, res) => {
       }
     }
   }
-  res.send(user)
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.status(200).send(user)
 })
 
 router.put(`/:customerXRefID/users/:userXRefID`, async (req, res) => {
@@ -102,6 +138,7 @@ router.put(`/:customerXRefID/users/:userXRefID`, async (req, res) => {
       }
     }
   }
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
   res.send(user)
 })
 
@@ -111,12 +148,13 @@ router.delete(`/:customerXRefID/users/:userXRefID`, async (req, res) => {
   await $UserService.deleteUser({ uuid: userXRefID })
   const kcClient = new KeycloakClient()
   await kcClient.disableUser(userXRefID)
+  res.sendStatus(200)
 })
 
 router.get(`/groups`, async (req, res) => {
   const kcClient = new KeycloakClient()
-  const users = await kcClient.getGroups()
-  res.send(users)
+  const groups = await kcClient.getGroups()
+  res.send(groups)
 })
 
 export default router

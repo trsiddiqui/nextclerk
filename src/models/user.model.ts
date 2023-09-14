@@ -131,6 +131,19 @@ export default class UsersManager {
       .where({ uuid: user.uuid })
   }
 
+  public async createUser(user: Partial<User>): Promise<void> {
+    await this.#knex('users').insert({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      entityID: user.entityID,
+      managerID: user.managerID,
+      departmentID: user.departmentID,
+      isAccountingManager: user.isAccountingManager,
+      uuid: user.uuid,
+    })
+  }
+
   public async deleteUser(uuid: string): Promise<void> {
     await this.#knex('users')
       .update({

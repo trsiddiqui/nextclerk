@@ -49,3 +49,15 @@ export interface UserResponse {
   firstName: string
   lastName: string
 }
+
+export type KeycloakUser = {
+  id: string
+  createdTimestamp: number
+  username: string
+  enabled: boolean
+  totp: boolean
+  emailVerified: boolean
+  firstName: string
+  lastName: string
+  email: string
+}
