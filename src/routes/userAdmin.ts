@@ -10,9 +10,11 @@ const router = Router()
 
 router.get(`/:customerXRefID/users`, async (req, res) => {
   const kcClient = new KeycloakClient()
+  console.log('Requesting Users from Nextclerk')
   const dashboardUsers = await $UserService.getEntitiesUsersForDashboard({
     customerXRefID: req.params.customerXRefID,
   })
+  console.log('Requesting User Groups from Keycloak')
   const users = await kcClient.getUsersGroups({
     customerXRefID: req.params.customerXRefID,
     dashboardUsers,
