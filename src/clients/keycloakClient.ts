@@ -17,7 +17,7 @@ export class KeycloakClient {
       .post(
         this.tokenUrl,
         new URLSearchParams({
-          username: 'admin', //gave the values directly for testing
+          username: 'taha@nextclerk.com', //gave the values directly for testing
           password: 'P@55word12345',
           client_id: 'admin-cli',
           grant_type: 'password',
@@ -29,6 +29,7 @@ export class KeycloakClient {
         }
       )
       .catch((err) => {
+        console.error('Token could not be fetched')
         throw new Error('Token could not be fetched')
       })
     await redis.set('keycloak_token', response.data.access_token, 'EX', response.data.expires_in)
