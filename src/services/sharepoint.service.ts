@@ -182,7 +182,7 @@ export const createMasterFileInSharepoint = async ({
 }: {
   customerXRefID: string
 }) => {
-  const fileName = 'LineItemsTemplate.xlsx'
+  const fileName = 'CalculationSpreadsheet.xlsx'
 
   const entities = await $EntityService.validateAndGetEntities({
     identifiers: {
