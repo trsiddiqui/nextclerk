@@ -125,6 +125,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('createdBy').notNullable()
     table.string('updatedBy').notNullable()
     table.string('archivedBy')
+    table.string('taskStatus').nullable()
     table.unique(['uuid'])
   })
 

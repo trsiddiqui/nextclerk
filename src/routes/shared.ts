@@ -14,6 +14,7 @@ import {
   getEntityTasks,
   updateTask,
 } from './handlers/tasks'
+import { getEntity } from './handlers/entities'
 
 const router = Router()
 
@@ -28,6 +29,8 @@ router.get(`/:customerXRefID/accounts`, getEntityAccounts)
 router.get(`/:customerXRefID/customers`, getEntityCustomers)
 
 router.get(`/:entityUuid/labels`, getEntityLabels)
+
+router.get(`/entity/:entityUuid`, getEntity)
 
 router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 
