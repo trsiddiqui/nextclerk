@@ -8,6 +8,10 @@ import { resolve } from 'path'
 
 const router = Router()
 
+/**
+ * USER DASHBOARD START
+ */
+
 router.get(`/:customerXRefID/users`, async (req, res) => {
   const kcClient = new KeycloakClient()
   console.log('Requesting Users from Nextclerk')
@@ -156,5 +160,55 @@ router.get(`/groups`, async (req, res) => {
   const groups = await kcClient.getGroups()
   res.send(groups)
 })
+
+/**
+ * USER DASHBOARD END
+ */
+
+/**
+ * GROUP DASHBOARD END
+ */
+
+router.get(`/groupsWithRoles`, async (req, res) => {
+  const kcClient = new KeycloakClient()
+  const groups = await kcClient.getGroupWithRoles()
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.send(groups)
+})
+
+router.put(`/groups/:groupId/roles`, async (req, res) => {
+  const { groupId } = req.params
+  const kcClient = new KeycloakClient()
+  const groups = await kcClient.addRolesToGroup(groupId, req.body)
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.send(groups)
+})
+
+router.delete(`/groups/:groupId/roles`, async (req, res) => {
+  const { groupId } = req.params
+  const kcClient = new KeycloakClient()
+  const groups = await kcClient.removeRolesFromGroup(groupId, req.body)
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.send(groups)
+})
+
+router.post(`/groups`, async (req, res) => {
+  const { name } = req.body
+  const kcClient = new KeycloakClient()
+  const groups = await kcClient.addGroup(name)
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.send(groups)
+})
+
+router.get(`/roles`, async (req, res) => {
+  const kcClient = new KeycloakClient()
+  const roles = await kcClient.getRoleObjects()
+  // deepcode ignore XSS: <please specify a reason of ignoring this>
+  res.send(roles)
+})
+
+/**
+ * GROUP DASHBOARD END
+ */
 
 export default router

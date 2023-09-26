@@ -2,6 +2,14 @@ import { redis } from '@/server'
 import { $UserService } from '@/services'
 import { DashboardUser, KeycloakUser, User } from '@/types'
 import axios from 'axios'
+type Role = {
+  id: string
+  name: string
+  description: string
+  composite: boolean
+  clientRole: boolean
+  containerId: string
+}
 
 export class KeycloakClient {
   baseUrl = 'https://auth.nextclerk.com'
@@ -274,4 +282,103 @@ export class KeycloakClient {
       console.error('An error occurred while creating user')
     }
   }
+
+  async getGroupWithRoles(): Promise<{ id: string; name: string; path: string; roles: Role[] }[]> {
+    const token = await this.#getToken()
+    const groupsWithRoles = []
+    try {
+      const groups = await this.getGroupObjects()
+      for (const group of groups) {
+        const { data } = await axios.get(`${this.adminApiUrl}/groups/${group.id}/role-mappings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (group.name !== 'Super Admin') {
+          groupsWithRoles.push({
+            ...group,
+            roles: data.realmMappings,
+          })
+        }
+      }
+    } catch (err) {
+      console.error('An error occurred while fetching groups')
+    }
+    return groupsWithRoles
+  }
+
+  async getRoleObjects(): Promise<Role[]> {
+    const token = await this.#getToken()
+    let roles
+    try {
+      const { data } = await axios.get(`${this.adminApiUrl}/roles`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      roles = data
+    } catch (err) {
+      console.error('An error occurred while fetching groups')
+    }
+    return roles
+  }
+
+  async addRolesToGroup(groupId: string, roles: Role[]): Promise<void> {
+    const token = await this.#getToken()
+    try {
+      await axios.post(`${this.adminApiUrl}/groups/${groupId}/role-mappings/realm`, roles, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    } catch (err) {
+      console.error('An error occurred while adding roles to groups')
+    }
+  }
+
+  async removeRolesFromGroup(
+    groupId: string,
+    roles: { id: string; name: string }[]
+  ): Promise<void> {
+    const token = await this.#getToken()
+    try {
+      await axios.delete(`${this.adminApiUrl}/groups/${groupId}/role-mappings/realm`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        data: roles,
+      })
+    } catch (err) {
+      console.error('An error occurred while adding roles to groups')
+    }
+  }
+
+  async addGroup(name: string): Promise<void> {
+    const token = await this.#getToken()
+    try {
+      await axios.post(
+        `${this.adminApiUrl}/groups`,
+        { name },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    } catch (err) {
+      console.error('An error occurred while adding roles to groups')
+    }
+  }
+
+  // FOR SAVING ROLE TO GROUP
+  // POST https://auth.nextclerk.com/admin/realms/nextclerk/groups/c79377a8-e9a5-476f-bda3-e3240c500c68/role-mappings/realm
+  // [{"id":"c27a9502-c2f3-48b6-be38-d9d03205c9cd","name":"Approve supporting package","description":"","composite":false,"clientRole":false,"containerId":"a159511f-e9a5-46ab-aae7-ca6ad6a8c622"}]
+
+  // FOR DELETING ROLE FROM GROUP
+  // DELETE https://auth.nextclerk.com/admin/realms/nextclerk/groups/c79377a8-e9a5-476f-bda3-e3240c500c68/role-mappings/realm
+  // [{"id":"c27a9502-c2f3-48b6-be38-d9d03205c9cd","name":"Approve supporting package"}]
+
+  // FOR CREATING GROUP
+  // POST https://auth.nextclerk.com/admin/realms/nextclerk/groups
+  // {"name":"TESTING GROUP"}
 }
