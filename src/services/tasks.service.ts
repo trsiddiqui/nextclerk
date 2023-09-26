@@ -208,6 +208,7 @@ export default class TaskService {
       uuid: task.uuid,
       parentUuid: task.parentUuid,
       status: task.status,
+      taskStatus: task.taskStatus ?? null
     }
 
     return taskResult
@@ -272,7 +273,8 @@ export default class TaskService {
       task.dueDate!= existingTask.dueDate ||
       task.isConfidential != existingTask.isConfidential ||
       task.description != existingTask.description ||
-      task.title != existingTask.title
+      task.title != existingTask.title ||
+      task.taskStatus != existingTask.taskStatus
     )
     {
       const {
@@ -287,6 +289,7 @@ export default class TaskService {
         isConfidential,
         isRecurring,
         title,
+        taskStatus,
       } = task
 
       const entity = await this.#entityService.validateAndGetEntities({
@@ -308,12 +311,12 @@ export default class TaskService {
       const assigner = await this.#userService.validateAndGetUsers({
         identifiers: { uuids: [assignerUUID]}
       })
-      let supportingPackage : Map<string, SupportingPackage>
-      if (supportingPackageUUID) {
-        supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
-          identifiers: { uuids: [supportingPackageUUID]}
-        })
-      }
+      // let supportingPackage : Map<string, SupportingPackage>
+      // if (supportingPackageUUID) {
+      //   supportingPackage = await this.#supportingPackageService.validateAndGetSupportingPackages({
+      //     identifiers: { uuids: [supportingPackageUUID]}
+      //   })
+      // }
       const updatedTask = await this.#tasksManager.updateTask({
         userXRefID,
         identifier: {
@@ -330,9 +333,10 @@ export default class TaskService {
           categoryID: category.get(categoryUUID).id,
           labelID: label.get(labelUUID).id,
           entityID: entity.get(entityUuid).id,
-          assigneeID: parseInt(assignee.get(assigneeUUID).id),
-          assignerID: parseInt(assigner.get(assignerUUID).id),
-          supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
+          assigneeID: assignee.get(assigneeUUID).id,
+          assignerID: assigner.get(assignerUUID).id,
+          // supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
+          taskStatus: taskStatus ?? null
         }
       })
     }
@@ -432,7 +436,6 @@ export default class TaskService {
       assignerUUID,
       categoryUUID,
       labelUUID,
-      supportingPackageUUID,
       date,
       dueDate,
       description,
@@ -487,7 +490,7 @@ export default class TaskService {
         labelID: label.get(labelUUID).id,
         entityID: entity.get(entityUuid).id,
         assigneeID: assigneeUUID ? parseInt(assignee.get(assigneeUUID).id) : null,
-        assignerID: parseInt(assigner.get(assignerUUID).id),
+        assignerID: assigner.get(assignerUUID).id,
         // supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
       }
     })
@@ -515,7 +518,7 @@ export default class TaskService {
             labelID: label.get(labelUUID).id,
             entityID: entity.get(entityUuid).id,
             assigneeID: assigneeUUID?  parseInt(assignee.get(assigneeUUID).id): null,
-            assignerID: parseInt(assigner.get(assignerUUID).id),
+            assignerID: assigner.get(assignerUUID).id,
             // supportingPackageID: supportingPackageUUID ? supportingPackage.get(supportingPackageUUID).id : null,
         },
         userXRefID

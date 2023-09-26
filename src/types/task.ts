@@ -18,6 +18,7 @@ export interface Task extends EntityDateWithArchive{
   dueDate: Date
   assigneeID: number
   assignerID: number
+  taskStatus?: string | null
 }
 
 export interface TaskRequestDB {
@@ -50,6 +51,7 @@ export interface TaskRequest {
   dueDate: Date
   assigneeUUID: string
   assignerUUID: string
+  taskStatus?: string | null
 }
 
 export interface TaskResponse extends EntityDateWithArchive{
@@ -70,6 +72,7 @@ export interface TaskResponse extends EntityDateWithArchive{
   date: Date
   dueDate: Date
   status: string | null
+  taskStatus?: string | null
   assigneeUUID: string | null
   assigneeName: string | null
   assignerUUID: string
