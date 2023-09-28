@@ -11,7 +11,6 @@ const router = Router()
  */
 
 router.get(`/:customerXRefID/users`, async (req, res) => {
-  throw new Error('Something wrong happened')
   const kcClient = new KeycloakClient()
   console.log('Requesting Users from Nextclerk')
   const dashboardUsers = await $UserService.getEntitiesUsersForDashboard({
