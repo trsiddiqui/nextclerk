@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { middlewareFileHandler, multerStorageDestinations } from './middlewares/fileUploadHandler'
 import { Uploader } from './handlers/uploader'
+import 'express-async-errors'
 
 const router = Router()
 

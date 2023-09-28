@@ -37,7 +37,7 @@ export class KeycloakClient {
         }
       )
       .catch((err) => {
-        console.error('Token could not be fetched')
+        console.error('Token could not be fetched', err)
         throw new Error('Token could not be fetched')
       })
     await redis.set('keycloak_token', response.data.access_token, 'EX', response.data.expires_in)

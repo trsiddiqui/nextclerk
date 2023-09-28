@@ -12,6 +12,7 @@ import {
   getAndReserveSupportingPackageNumber,
   getAndReserveJournalEntryNumber,
 } from '../routes/handlers/supportingPackages'
+import 'express-async-errors'
 
 const router = Router()
 

@@ -19,6 +19,7 @@ import userAdminRoutes from './routes/userAdmin'
 import fileRoutes from './routes/file'
 import thirdPartyAuthRoutes from './routes/thirdPartyAuth'
 import genericRoutes from './routes/shared'
+import 'express-async-errors'
 
 class App {
   public app: express.Application
@@ -83,9 +84,9 @@ class App {
     this.app.use('/api/user-administration', userAdminRoutes)
     this.app.use('/api/global', fileRoutes)
     this.app.use('/third-party-auth', thirdPartyAuthRoutes)
-    this.app.use(function errorHandler(err, req, res, next) {
-      console.error(err)
-      res.status(500)
+    this.app.use((error, req, res, next) => {
+      console.error(error)
+      res.status(500).send('An unexpected error occurred')
     })
   }
 

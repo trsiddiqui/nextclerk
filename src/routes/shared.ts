@@ -15,6 +15,7 @@ import {
   updateTask,
 } from './handlers/tasks'
 import { getEntity } from './handlers/entities'
+import 'express-async-errors'
 
 const router = Router()
 

@@ -1,10 +1,8 @@
 import { KeycloakClient } from '@/clients/keycloakClient'
-import { redis } from '@/server'
 import { $DepartmentService, $EntityService, $UserService } from '@/services'
 import { User, UserRequest } from '@/types'
-import axios from 'axios'
-import { NextFunction, Request, Response, Router } from 'express'
-import { resolve } from 'path'
+import { Router } from 'express'
+import 'express-async-errors'
 
 const router = Router()
 
@@ -13,6 +11,7 @@ const router = Router()
  */
 
 router.get(`/:customerXRefID/users`, async (req, res) => {
+  throw new Error('Something wrong happened')
   const kcClient = new KeycloakClient()
   console.log('Requesting Users from Nextclerk')
   const dashboardUsers = await $UserService.getEntitiesUsersForDashboard({
