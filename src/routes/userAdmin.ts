@@ -18,10 +18,12 @@ router.get(`/:customerXRefID/users`, async (req, res) => {
   const dashboardUsers = await $UserService.getEntitiesUsersForDashboard({
     customerXRefID: req.params.customerXRefID,
   })
+  const usersForKCStatus = await kcClient.getUsers()
   console.log('Requesting User Groups from Keycloak')
   const users = await kcClient.getUsersGroups({
     customerXRefID: req.params.customerXRefID,
     dashboardUsers,
+    keycloakUsers: usersForKCStatus,
   })
   // deepcode ignore XSS: <please specify a reason of ignoring this>
   res.status(200).send(users)
@@ -152,6 +154,22 @@ router.delete(`/:customerXRefID/users/:userXRefID`, async (req, res) => {
   await $UserService.deleteUser({ uuid: userXRefID })
   const kcClient = new KeycloakClient()
   await kcClient.disableUser(userXRefID)
+  res.sendStatus(200)
+})
+
+router.put(`/:customerXRefID/users/:userXRefID/actions/disable`, async (req, res) => {
+  const { userXRefID } = req.params
+  await $UserService.validateAndGetUsers({ identifiers: { uuids: [userXRefID] } })
+  const kcClient = new KeycloakClient()
+  await kcClient.disableUser(userXRefID)
+  res.sendStatus(200)
+})
+
+router.put(`/:customerXRefID/users/:userXRefID/actions/enable`, async (req, res) => {
+  const { userXRefID } = req.params
+  await $UserService.validateAndGetUsers({ identifiers: { uuids: [userXRefID] } })
+  const kcClient = new KeycloakClient()
+  await kcClient.enableUser(userXRefID)
   res.sendStatus(200)
 })
 

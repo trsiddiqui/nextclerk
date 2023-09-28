@@ -57,9 +57,11 @@ export class KeycloakClient {
   async getUsersGroups({
     customerXRefID,
     dashboardUsers,
+    keycloakUsers,
   }: {
     customerXRefID: string
     dashboardUsers: DashboardUser[]
+    keycloakUsers: KeycloakUser[]
   }): Promise<DashboardUser[]> {
     const token = await this.#getToken()
     let usersWithGroups: DashboardUser[] = []
@@ -73,9 +75,11 @@ export class KeycloakClient {
             },
           }
         )
+        const kcUser = keycloakUsers.find((kc) => kc.id === user.uuid)
         usersWithGroups.push({
           ...user,
           groups: userGroups.map((ug) => ug.name),
+          enabled: kcUser?.enabled != null ? kcUser.enabled : true,
         })
       } catch (err) {
         console.error('An error occurred while fetching groups for ', { id: user.uuid })
@@ -185,6 +189,30 @@ export class KeycloakClient {
       await axios.put(
         `${this.adminApiUrl}/users/${userId}`,
         { ...userData, enabled: false },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    } catch (err) {
+      console.error('An error occurred while disabling user', {
+        user: userId,
+      })
+    }
+  }
+
+  async enableUser(userId: string): Promise<void> {
+    const token = await this.#getToken()
+    try {
+      const { data: userData } = await axios.get(`${this.adminApiUrl}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      await axios.put(
+        `${this.adminApiUrl}/users/${userId}`,
+        { ...userData, enabled: true },
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -43,7 +43,7 @@ export type DashboardUser = {
     uuid: string
   }
   isAccountingManager: boolean
-  archived: boolean
+  enabled: boolean
 }
 
 export interface UserResponse {
