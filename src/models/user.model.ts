@@ -45,8 +45,15 @@ export default class UsersManager {
     let query = this.#knex
       .withSchema('public')
       .table('users')
-      .select<User[]>('*')
-      .where('entityID', entityID)
+      .select<User[]>([
+        'users.*',
+        'manager.firstName as managerFirstName',
+        'manager.lastName as managerLastName',
+        'manager.uuid as managerUuid',
+        'manager.email as managerEmail',
+      ])
+      .leftJoin('users as manager', 'users.managerID', 'manager.id')
+      .where('users.entityID', entityID)
 
     if (search) {
       query = query.andWhereRaw(

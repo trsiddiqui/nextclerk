@@ -69,6 +69,14 @@ export default class UserService {
       lastName: eu.lastName,
       uuid: eu.uuid,
       email: eu.email,
+      ...(eu.managerID && {
+        manager: {
+          firstName: eu.managerFirstName,
+          lastName: eu.managerLastName,
+          uuid: eu.managerUuid,
+          email: eu.managerEmail,
+        },
+      }),
     }))
   }
 

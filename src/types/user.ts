@@ -14,6 +14,10 @@ export type User = {
   archivedAt?: DateTime
   archivedBy?: string
   groups?: string[]
+  managerFirstName?: string
+  managerLastName?: string
+  managerUuid?: string
+  managerEmail?: string
 }
 
 export type UserRequest = Omit<User, 'entityID' | 'managerID' | 'departmentID'> & {
@@ -48,6 +52,16 @@ export interface UserResponse {
   email: string
   firstName: string
   lastName: string
+  manager?: {
+    firstName: string
+    lastName: string
+    uuid: string
+    email: string
+  }
+  department?: {
+    label: string
+    uuid: string
+  }
 }
 
 export type KeycloakUser = {

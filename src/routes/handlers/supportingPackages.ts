@@ -6,6 +6,7 @@ import {
   $SupportingPackageService,
 } from '../../services'
 import { SupportingPackageCommunicationRequest, SupportingPackageRequest } from '@/types'
+import { redis } from '@/server'
 
 export const createLineItemsSheet = async (
   req: Request,
@@ -242,23 +243,54 @@ export const postJournalEntryToERP = async (
   try {
     const { customerXRefID, supportingPackageUUID } = req.params
 
-    const ERPjournalEntrySuccess =
-      await $SupportingPackageService.postToERP({
-        journalEntryLines: req.body,
-        customerXRefID,
-        supportingPackageUUID,
-        userXRefID: 'testUser',
-      })
+    const ERPjournalEntrySuccess = await $SupportingPackageService.postToERP({
+      journalEntryLines: req.body,
+      customerXRefID,
+      supportingPackageUUID,
+      userXRefID: 'testUser',
+    })
     if (ERPjournalEntrySuccess) {
       res.status(200).json(ERPjournalEntrySuccess)
     } else {
-
       res.send(400).json(ERPjournalEntrySuccess)
     }
-
   } catch (error) {
     next(error)
   }
+}
+
+export const getAndReserveSupportingPackageNumber = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { customerXRefID } = req.params
+  let reservedNumber
+  const lastUsedNumber = await redis.get(`supporting-package-number-${customerXRefID}`)
+  if (lastUsedNumber == null) {
+    reservedNumber = 1
+  } else {
+    reservedNumber = parseInt(lastUsedNumber) + 1
+  }
+  await redis.set(`supporting-package-number-${customerXRefID}`, reservedNumber)
+  res.status(200).json(reservedNumber)
+}
+
+export const getAndReserveJournalEntryNumber = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { customerXRefID } = req.params
+  let reservedNumber
+  const lastUsedNumber = await redis.get(`journal-entry-number-${customerXRefID}`)
+  if (lastUsedNumber == null) {
+    reservedNumber = 1
+  } else {
+    reservedNumber = parseInt(lastUsedNumber) + 1
+  }
+  await redis.set(`journal-entry-number-${customerXRefID}`, reservedNumber)
+  res.status(200).json(reservedNumber)
 }
 
 // export const updateJournalEntries = async (
@@ -325,5 +357,3 @@ export const postJournalEntryToERP = async (
 //     next(error)
 //   }
 // }
-
-

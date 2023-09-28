@@ -9,6 +9,8 @@ import {
   createSupportingPackageCommunication,
   getSupportingPackageCommunicationByCommunicationUUID,
   postJournalEntryToERP,
+  getAndReserveSupportingPackageNumber,
+  getAndReserveJournalEntryNumber,
 } from '../routes/handlers/supportingPackages'
 
 const router = Router()
@@ -28,17 +30,33 @@ router.get(
 router.post(`/:customerXRefID/supporting-packages/`, createSupportingPackage)
 router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, updateSupportingPackage)
 router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID`, getSupportingPackage)
-router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications`, createSupportingPackageCommunication)
-router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/communications/:communicationUUID`, getSupportingPackageCommunicationByCommunicationUUID)
+router.post(
+  `/:customerXRefID/supporting-packages/:supportingPackageUUID/communications`,
+  createSupportingPackageCommunication
+)
+router.put(
+  `/:customerXRefID/supporting-packages/:supportingPackageUUID/communications/:communicationUUID`,
+  getSupportingPackageCommunicationByCommunicationUUID
+)
+
+router.get(
+  `/:customerXRefID/supporting-packages/action/reserve-supporting-package-number`,
+  getAndReserveSupportingPackageNumber
+)
+
+router.get(
+  `/:customerXRefID/supporting-packages/action/reserve-journal-entry-number`,
+  getAndReserveJournalEntryNumber
+)
 
 // JE
-router.post(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry/post-to-erp`, postJournalEntryToERP)
+router.post(
+  `/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry/post-to-erp`,
+  postJournalEntryToERP
+)
 // router.put(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, updateJournalEntries)
 // router.delete(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, deleteJournalEntries)
 // router.get(`/:customerXRefID/supporting-packages/:supportingPackageUUID/journalEntry`, getJournalEntries)
-
-
-
 
 // this.router.use(
 //   ...openApiValidatorMiddlewares({
