@@ -63,10 +63,11 @@ export class Uploader {
 
   static uploadToSharepoint = async (req: Request, res: any) => {
     const { customerXRefID } = req.params
+    const { category, label } = req.query as { label?: string, category?: string }
     // get file data through req.file thank to multer
     console.log('file object', req.file)
 
-    const uploadRes = await uploadFileToSharepoint(customerXRefID, req.file)
+    const uploadRes = await uploadFileToSharepoint(customerXRefID, req.file, category, label)
 
     const uploadedFile = {
       mimetype: req.file.mimetype,
@@ -152,7 +153,7 @@ export class Uploader {
     // const fileName = `${fileUUID}.xlsx`
     // const params = { Bucket: `supporting-packages`, Key: `${customerXRefID}/${fileName}` }
 
-   //  const content = await s3.getObject(params).promise()
+    //  const content = await s3.getObject(params).promise()
     // const dir = __dirname + `/../../nextclerk-tmp`
     // if (!fs.existsSync(dir)) {
     //   fs.mkdirSync(dir)
@@ -162,7 +163,7 @@ export class Uploader {
     await uploadUpdatedFileToSharepoint({
       customerXRefID,
       fileName,
-      file: req.file
+      file: req.file,
     })
 
     res.send(200)

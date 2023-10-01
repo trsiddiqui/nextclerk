@@ -94,6 +94,8 @@ export async function up(knex: Knex): Promise<void> {
     table.text('location').notNullable()
     table.text('downloadLink').nullable()
     table.text('remoteReferenceUuid').nullable()
+    table.bigInteger('categoryID').nullable().references('id').inTable('public.categories')
+    table.bigInteger('labelID').nullable().references('id').inTable('public.labels')
     table.bigint('size').nullable()
     table.timestamp('createdAt').notNullable().defaultTo(knex.fn.now())
     table.timestamp('updatedAt').notNullable().defaultTo(knex.fn.now())

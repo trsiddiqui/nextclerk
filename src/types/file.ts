@@ -10,6 +10,8 @@ export interface File extends EntityDate {
   downloadLink?: string
   remoteReferenceUuid?: string
   size: number
+  categoryID?: number
+  labelID?: number
 }
 
 export interface FileRequest {
@@ -21,4 +23,6 @@ export interface FileRequest {
   size: number
   remoteReferenceUuid?: string
   downloadLink?: string
+  categoryID?: number
+  labelID?: number
 }

@@ -5,10 +5,10 @@ import { v4 } from 'uuid'
 import path from 'path'
 import { BUCKET_NAME, DRIVE_ID } from '@/config'
 import { $FilesManager } from '@/models'
-import { $EntityService, $FileService } from './index'
+import { $CategoryService, $EntityService, $FileService, $LabelService } from './index'
 import { checkBucket, initBucket } from '@/utils/s3/checkBucket'
 import { getAccessToken } from '@/utils/util'
-import { File, FileRequest } from '@/types'
+import { Category, File, FileRequest, Label } from '@/types'
 
 // TODO: Refactor this
 // Use S3 service to get from S3 and then call uploadToSharepoint to store in sharepoint
@@ -506,7 +506,9 @@ export const uploadUpdatedFileToSharepoint = async ({
 
 export const uploadFileToSharepoint = async (
   customerXRefID: string,
-  fileData?: Express.Multer.File
+  fileData?: Express.Multer.File,
+  category?: string,
+  label?: string
 ): Promise<{ success: boolean; message: string; data: object }> => {
   try {
     let customerFolderId: string
@@ -549,6 +551,22 @@ export const uploadFileToSharepoint = async (
       customerXRefID,
       fileName: uuidFileWithExtension,
     })
+    let categories: Map<string, Category> | undefined
+    let labels: Map<string, Label> | undefined
+    if (category) {
+      categories = await $CategoryService.validateAndGetCategories({
+        identifiers: {
+          uuids: [category],
+        },
+      })
+    }
+    if (label) {
+      labels = await $LabelService.validateAndGetLabels({
+        identifiers: {
+          uuids: [label],
+        },
+      })
+    }
 
     let uploadedFileObject: FileRequest = {
       uuid,
@@ -560,7 +578,11 @@ export const uploadFileToSharepoint = async (
       downloadLink,
     }
     await $FileService.createFile({
-      file: uploadedFileObject,
+      file: {
+        ...uploadedFileObject,
+        ...(category ? { categoryID: categories.get(category).id } : {}),
+        ...(label ? { labelID: labels.get(label).id } : {}),
+      },
     })
 
     return {
