@@ -2,16 +2,17 @@ import { EntityDate } from './common'
 
 export interface File extends EntityDate {
   id: number
-  uuid: string
   entityID: number
+  categoryID?: number
+  labelID?: number
+  uuid: string
   name: string
   mimeType: string
   location: string
   downloadLink?: string
   remoteReferenceUuid?: string
   size: number
-  categoryID?: number
-  labelID?: number
+  isVisible: boolean
 }
 
 export interface FileRequest {
@@ -25,4 +26,13 @@ export interface FileRequest {
   downloadLink?: string
   categoryID?: number
   labelID?: number
+}
+
+export interface FileResponse extends Omit<File, 'id' | 'entityID' | 'categoryID' | 'labelID'> {
+  entityUUID: string
+  entityName: string
+  categoryUUID?: string
+  categoryName?: string
+  labelUUID?: string
+  labelName?: string
 }

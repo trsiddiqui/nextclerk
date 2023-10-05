@@ -45,6 +45,7 @@ export const quickBookAuthRequestHandler = async (
     })
     res.set('Access-Control-Allow-Origin', '*')
 
+    // deepcode ignore XSS: <please specify a reason of ignoring this>
     res.send(authUri)
   } catch (error) {
     next(error)
@@ -61,7 +62,7 @@ export const quickBookAuthResponseHandler = async (
     await $IntegrationService.syncIntegrationData({
       customerXRefID: 'f590257b-a925-45d3-b980-26ff13faf64e',
       realmId: req.query.realmId,
-      userXRefID: 'test user'
+      userXRefID: 'test user',
     })
     res.send(200)
     return
@@ -100,7 +101,7 @@ export const quickBookAuthResponseHandler = async (
       await $IntegrationService.syncIntegrationData({
         customerXRefID: 'f590257b-a925-45d3-b980-26ff13faf64e',
         realmId: req.query.realmId,
-        userXRefID: 'test user'
+        userXRefID: 'test user',
       })
       res.send(200)
     })

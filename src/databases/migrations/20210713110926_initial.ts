@@ -94,6 +94,7 @@ export async function up(knex: Knex): Promise<void> {
     table.text('location').notNullable()
     table.text('downloadLink').nullable()
     table.text('remoteReferenceUuid').nullable()
+    table.boolean('isVisible').notNullable().defaultTo(true)
     table.bigInteger('categoryID').nullable().references('id').inTable('public.categories')
     table.bigInteger('labelID').nullable().references('id').inTable('public.labels')
     table.bigint('size').nullable()

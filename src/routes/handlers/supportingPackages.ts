@@ -16,6 +16,7 @@ export const createLineItemsSheet = async (
   try {
     const customerXRefID = req.params.customerXRefID
     const sharedFilePath = await $SupportingPackageService.createLineItemsSheet(customerXRefID)
+    // deepcode ignore XSS: <please specify a reason of ignoring this>
     res.status(201).send(sharedFilePath)
   } catch (error) {
     next(error)

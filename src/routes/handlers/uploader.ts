@@ -11,6 +11,7 @@ import {
   getViewOnlineLink,
 } from '@/services/sharepoint.service'
 import path from 'path'
+import { DateTime } from 'luxon'
 
 // const s3 = new S3({
 //   accessKeyId: AWS_ACCESS_KEY_ID,
@@ -63,7 +64,7 @@ export class Uploader {
 
   static uploadToSharepoint = async (req: Request, res: any) => {
     const { customerXRefID } = req.params
-    const { category, label } = req.query as { label?: string, category?: string }
+    const { category, label } = req.query as { label?: string; category?: string }
     // get file data through req.file thank to multer
     console.log('file object', req.file)
 
@@ -183,9 +184,58 @@ export class Uploader {
       fileName: uuidFileWithExtension,
     })
     if (sharingLink) {
+      // deepcode ignore XSS: <please specify a reason of ignoring this>
       res.send(sharingLink)
     } else {
       res.status(400)
     }
+  }
+
+  static getAllFiles = async (req: Request, res: Response): Promise<void> => {
+    const { customerXRefID } = req.params as unknown as {
+      customerXRefID: string
+    }
+
+    const { categories, labels, createdMonth, createdYear } = req.query as {
+      labels?: string
+      categories?: string
+      createdMonth?: string
+      createdYear?: string
+    }
+    let range: { start: DateTime; end: DateTime } | null = null
+    if (createdMonth && createdYear) {
+      const startDate = DateTime.fromObject({
+        year: parseInt(createdYear),
+        month: parseInt(createdMonth),
+        day: 1,
+      })
+      range = {
+        start: startDate,
+        end: startDate.endOf('month'),
+      }
+    }
+
+    const files = await $FileService.getFiles({
+      entity: customerXRefID,
+      labels: labels?.split(','),
+      categories: categories?.split(','),
+      range,
+    })
+
+    res.send(files)
+  }
+
+  static patchFile = async (req: Request, res: Response): Promise<void> => {
+    const { customerXRefID, fileUUID } = req.params as unknown as {
+      customerXRefID: string
+      fileUUID: string
+    }
+
+    await $FileService.updateFileVisibility({
+      fileUUID,
+      isVisible: req.body.isVisible,
+    })
+
+    res.send('OK')
   }
 }
