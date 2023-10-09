@@ -6,7 +6,7 @@ import { syncIntegrationData } from './handlers/integrations'
 import { getEntityLocations } from './handlers/locations'
 import { getCategories } from './handlers/supportingPackages'
 import { getEntityUsers } from './handlers/users'
-import { getEntityLabels } from './handlers/labels'
+import { archiveEntityLabel, createLabel, getEntityLabels } from './handlers/labels'
 import {
   createEntityTask,
   deleteTask,
@@ -14,7 +14,7 @@ import {
   getEntityTasks,
   updateTask,
 } from './handlers/tasks'
-import { getEntity } from './handlers/entities'
+import { getEntity, updateEntity } from './handlers/entities'
 import 'express-async-errors'
 
 const router = Router()
@@ -31,7 +31,13 @@ router.get(`/:customerXRefID/customers`, getEntityCustomers)
 
 router.get(`/:entityUuid/labels`, getEntityLabels)
 
+router.put(`/:customerXRefID/labels/:labelXRefID/actions/archive`, archiveEntityLabel)
+
+router.post(`/:customerXRefID/labels`, createLabel)
+
 router.get(`/entity/:entityUuid`, getEntity)
+
+router.put(`/entity/:entityUuid`, updateEntity)
 
 router.get(`/:customerXRefID/syncIntegrationData`, syncIntegrationData)
 

@@ -22,3 +22,23 @@ export const getEntity = async (
     next(error)
   }
 }
+
+export const updateEntity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { entityUuid } = req.params
+    const userXRefID = 'testUser'
+    const updatedEntity = await $EntityService.updateEntityByUuid({
+      entityUuid,
+      entity: req.body,
+      userXRefID,
+    })
+
+    res.status(200).json(updateEntity)
+  } catch (error) {
+    next(error)
+  }
+}
