@@ -1,17 +1,11 @@
-
+import { DateTime } from 'luxon'
 import { CategoriesManager } from '../models'
 import { Category } from '../types'
 
 export default class CategoryService {
-
   #categoriesManager: CategoriesManager
 
-  constructor({
-    categoriesManager,
-  }: {
-    categoriesManager: CategoriesManager
-
-  }) {
+  constructor({ categoriesManager }: { categoriesManager: CategoriesManager }) {
     this.#categoriesManager = categoriesManager
   }
 
@@ -24,8 +18,7 @@ export default class CategoryService {
       identifiers,
     })
 
-    const inputLength =
-      'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
+    const inputLength = 'uuids' in identifiers ? identifiers.uuids.length : identifiers.ids.length
 
     if (returnedCategories.length !== inputLength) {
       throw new Error('One or more of the reference Categories could not be found')
@@ -35,10 +28,19 @@ export default class CategoryService {
 
   public async getCategories(): Promise<Category[]> {
     const categories = await this.#categoriesManager.getAllCategories({
-      txn: null
+      txn: null,
     })
 
-    return categories
-  }
+    const uncategorized: Category = {
+      id: 0,
+      createdAt: DateTime.now().toJSDate(),
+      createdBy: 'SYSTEM',
+      updatedAt: DateTime.now().toJSDate(),
+      updatedBy: 'SYSTEM',
+      name: 'UNCATEGORIZED',
+      uuid: '00000000-0000-0000-0000-000000000000',
+    }
 
+    return categories.concat(uncategorized)
+  }
 }

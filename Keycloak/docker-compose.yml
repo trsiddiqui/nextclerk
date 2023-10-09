@@ -1,0 +1,55 @@
+services:
+  postgres:
+    restart: always
+    image: postgres:13-buster
+    container_name: postgres
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=P@55word12345
+      - POSTGRES_USER=dev
+      - POSTGRES_DB=dev
+    networks:
+      - backend
+  spreadsheet-api-service:
+    image: trsiddiqui1989/ej2-spreadsheet-web-services
+    restart: always
+    ports:
+      - "8080:80"
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: 172.17.0.1
+      KC_DB_URL_DATABASE: identity
+      KC_DB_PASSWORD: P@55word12345
+      KC_DB_USERNAME: dev
+      KC_DB_SCHEMA: public
+      KC_HOSTNAME: auth.nextclerk.com
+      KEYCLOAK_ADMIN: taha@nextclerk.com
+      KEYCLOAK_ADMIN_PASSWORD: P@55word12345
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ./realm.json:/opt/keycloak/data/import/realm.json
+      - ./server.crt.pem:/opt/keycloak/conf/server.crt.pem
+      - ./server.key.pem:/opt/keycloak/conf/server.key.pem
+    ports:
+      - "443:8443"
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local

@@ -1,5 +1,6 @@
+import { DateTime } from 'luxon'
 import { FilesManager } from '../models'
-import { File, FileRequest } from '../types'
+import { File, FileRequest, FileResponse } from '../types'
 
 export default class FileService {
   #fileManager: FilesManager
@@ -44,15 +45,45 @@ export default class FileService {
     )
   }
 
-  public async createFile({
-    file
-  }:{
-    file: FileRequest
-  }): Promise<File> {
+  public async createFile({ file }: { file: FileRequest }): Promise<File> {
     const createdFile = await this.#fileManager.upsertFile({
-      file
+      file,
     })
 
     return createdFile
+  }
+
+  public async getFiles({
+    entity,
+    labels,
+    categories,
+    range,
+  }: {
+    entity: string
+    labels?: string[]
+    categories?: string[]
+    range?: { start: DateTime; end: DateTime }
+  }): Promise<FileResponse[]> {
+    const files = await this.#fileManager.getFiles({
+      entityUuid: entity,
+      categories,
+      labels,
+      range,
+    })
+
+    return files
+  }
+
+  public async updateFileVisibility({
+    fileUUID,
+    isVisible,
+  }: {
+    fileUUID: string
+    isVisible: boolean
+  }): Promise<void> {
+    await this.#fileManager.updateFileVisibility({
+      fileUUID,
+      isVisible,
+    })
   }
 }

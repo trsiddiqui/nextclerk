@@ -27,6 +27,10 @@ router.post(`/:customerXRefID/files`, Uploader.createMasterFileInSharepoint)
 
 router.get(`/:customerXRefID/files/:fileUUID`, Uploader.getFileFromSharepoint)
 
+router.get(`/:customerXRefID/files`, Uploader.getAllFiles)
+
+router.patch('/:customerXRefID/files/:fileUUID', Uploader.patchFile)
+
 router.get(`/:customerXRefID/files/:fileUUID/online-link`, Uploader.getFileOpenLinkFromSharepoint)
 
 router.put(

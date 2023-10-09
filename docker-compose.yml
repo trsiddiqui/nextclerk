@@ -36,7 +36,7 @@ services:
     image: postgres:13-buster
     container_name: postgres
     volumes:
-      - ./sql:/docker-entrypoint-initdb.d
+      - ./Keycloak/sql:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     environment:
@@ -57,7 +57,7 @@ services:
     image: trsiddiqui1989/ej2-spreadsheet-web-services
     restart: always
     ports:
-      - "3002:3002"
+      - "3002:80"
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     command: start-dev --import-realm
