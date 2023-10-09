@@ -58,4 +58,64 @@ export default class EntityService {
     return affectedEntity
   }
 
+
+  // TODO: Majid, merge update and upsert
+  public async updateEntityByUuid({
+    entityUuid,
+    entity,
+    userXRefID,
+  }: {
+    entityUuid: string
+    entity: Partial<Entity>
+    userXRefID: string
+  }): Promise<Entity> {
+
+    const existingEntities = await this.validateAndGetEntities({
+      identifiers: { uuids: [entityUuid] },
+    })
+
+
+    const existingEntity = existingEntities.get(entityUuid)
+
+
+    if (
+      entity.name != existingEntity.name ||
+
+      entity.address != existingEntity.address ||
+      entity.city!= existingEntity.city ||
+      entity.state != existingEntity.state ||
+      entity.zip != existingEntity.zip ||
+      entity.ein != existingEntity.ein
+    )
+    {
+      const {
+        name,
+        address,
+        city,
+        state,
+        zip,
+        ein,
+      } = entity
+
+      const updatedEntity = await this.#entitiesManager.upsertEntity({
+        userXRefID,
+        entity: {
+          ...existingEntity,
+          name,
+          address,
+          city,
+          state,
+          zip,
+          ein
+        }
+      })
+    }
+
+    const resultEntities = await this.validateAndGetEntities({
+      identifiers: { uuids: [entityUuid] },
+    })
+
+    return resultEntities.get(entityUuid)
+  }
+
 }
